@@ -370,6 +370,18 @@ a.lrow:hover, a.lrow:focus-visible, .lrow.is-current { background: var(--card-2)
 .chartcard .cc-head h3 { margin: 0 0 .15rem; font-size: 1.1rem; }
 .chartcard .cc-head p { margin: 0; font-size: .88rem; color: var(--ink-3); }
 .canvas-box { position: relative; height: 320px; }
+#cPrice, #cVolF { cursor: crosshair; }
+.readout {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .3rem 1.1rem;
+  min-height: 2.6rem; margin: -.2rem 0 .7rem; padding: .55rem .8rem;
+  background: var(--card-2); border: 1px solid var(--line); border-radius: var(--r-sm);
+  font-size: .88rem; color: var(--ink-2);
+}
+.readout > b { color: var(--ink); font-weight: 600; }
+.readout span { display: inline-flex; align-items: center; gap: .35rem; white-space: nowrap; }
+.readout .muted { color: var(--ink-3); font-size: .82rem; }
+.readout .pos { color: var(--calm); font-weight: 600; }
+.readout .neg { color: var(--crisis); font-weight: 600; }
 .canvas-box.short { height: 120px; }
 .keyrow { display: flex; flex-wrap: wrap; gap: .5rem 1.1rem; margin-top: .85rem; font-size: .82rem; color: var(--ink-2); }
 .keyrow span { display: inline-flex; align-items: center; gap: .4rem; }

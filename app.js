@@ -351,7 +351,7 @@ function renderOverview(view) {
     </tbody></table>`;
   view.appendChild(data);
 
-  requestAnimationFrame(() => drawRegimeChart('cOvRegime', { compact: true }));
+  drawRegimeChart('cOvRegime', { compact: true });
 }
 
 function regimeSummary() {
@@ -491,7 +491,8 @@ function renderStockDetail(view, sym) {
   // volatility chart (realized + 3 forecasts + range band)
   const vc = el('section', { class: 'card chartcard', 'aria-labelledby': 'vcTitle' });
   vc.innerHTML = `<div class="cc-head"><div><h3 id="vcTitle">Volatility: recent and forecast</h3>
-      <p>Realized volatility over the last 6 months, then each model's path for the next ~2 months. Hover for daily values.</p></div></div>
+      <p>Realized volatility over the last 6 months, then each model's path for the next ~2 months. Move across the chart to read any day.</p></div></div>
+    <div class="readout" id="roVol"></div>
     <div class="canvas-box" role="img" aria-label="${esc(`${sym} realized volatility ${pct(st.recent)}; forecasts EGARCH ${pct(st.eg)}, TimesFM ${pct(st.tf)}, TimesFM with sector ${pct(st.tfT)}.`)}"><canvas id="cVolF"></canvas></div>
     <div class="keyrow">
       <span><i class="sw" style="border-color:var(--s-real)"></i> Realized (20-day)</span>
@@ -507,6 +508,7 @@ function renderStockDetail(view, sym) {
   const pc = el('section', { class: 'card chartcard', 'aria-labelledby': 'pcTitle' });
   pc.innerHTML = `<div class="cc-head"><div><h3 id="pcTitle">Price, last 12 months</h3>
       <p>Closing price with 50- and 200-day ${termLink('moving averages', 'Moving average')}. Shading shows the market regime each day; marked points are the largest one-day moves.</p></div></div>
+    <div class="readout" id="roPrice"></div>
     <div class="canvas-box" role="img" aria-label="${esc(`${sym} closing price over 12 months, now ${money(price)}. Largest one-day moves: ${moves.map(m => `${signed(m.r)}% on ${longDate(m.date)}`).join('; ')}.`)}"><canvas id="cPrice"></canvas></div>
     <div class="canvas-box short" style="margin-top:.3rem" role="img" aria-label="Daily trading volume"><canvas id="cVolume"></canvas></div>
     <div class="keyrow">
@@ -562,7 +564,9 @@ function renderStockDetail(view, sym) {
     <p class="factnote note">From Yahoo Finance at export time. PEG uses analysts' growth estimates, which swing widely for airlines; read it with care.</p>`;
   view.appendChild(facts);
 
-  requestAnimationFrame(() => drawStockCharts(sym, moves));
+  drawStockCharts(sym, moves);
+  $('#roVol').innerHTML = volReadoutDefault(st);
+  if (s.price) $('#roPrice').innerHTML = priceReadoutDefault(s.price, info);
 }
 const zWord = (z, pos, neg) => !isNum(z) ? '—' : Math.abs(z) < 0.15 ? 'Neutral' : (z > 0 ? pos : neg).replace(/^./, m => m.toUpperCase());
 
@@ -620,7 +624,9 @@ function chartTheme() {
   Chart.defaults.font.size = 12;
   Chart.defaults.color = css('--ink-3');
   Chart.defaults.borderColor = css('--line');
-  Chart.defaults.animation = matchMedia('(prefers-reduced-motion: reduce)').matches ? false : { duration: 350, easing: 'easeOutQuart' };
+  // Draw charts in their final state immediately (no entrance animation): a chart must never
+  // depend on animation frames to appear. Mutate the existing defaults rather than replacing them.
+  Chart.defaults.animation.duration = 0;
 }
 function tooltipStyle(extra = {}) {
   return {
@@ -729,7 +735,57 @@ const regimeOnsetPlugin = {
     ctx.restore();
   },
 };
-Chart.register(regimeBandsPlugin, todayLinePlugin, moveLabelsPlugin, regimeOnsetPlugin);
+/* Trading-style crosshair: a vertical line snapped to the hovered day, a dashed horizontal
+   line at the cursor with its value tagged on the axis, and an onMove callback that drives
+   the live readout above the chart. `linked` charts (volume) mirror the vertical line. */
+const crosshairPlugin = {
+  id: 'crosshair',
+  // Config lives on chart.$crossCfg, not in options: Chart.js would call functions placed in options.
+  afterEvent(chart, args) {
+    const opts = chart.$crossCfg;
+    if (!opts) return;
+    const e = args.event, a = chart.chartArea, n = chart.data.labels.length;
+    const outside = e.type === 'mouseout' || e.x < a.left || e.x > a.right || e.y < a.top || e.y > a.bottom;
+    if (outside) {
+      if (chart.$cross) { chart.$cross = null; (opts.linked || []).forEach(l => { l.$cross = null; l.draw(); }); if (opts.onMove) opts.onMove(null); chart.draw(); }
+      return;
+    }
+    const idx = Math.max(0, Math.min(n - 1, Math.round(chart.scales.x.getValueForPixel(e.x))));
+    chart.$cross = { idx, y: e.y };
+    (opts.linked || []).forEach(l => { l.$cross = { idx, y: null }; l.draw(); });
+    if (opts.onMove) opts.onMove(idx);
+    // draw now rather than flagging a re-render, which would wait on an animation frame
+    chart.draw();
+  },
+  afterDatasetsDraw(chart) {
+    const opts = chart.$crossCfg, c = chart.$cross;
+    if (!opts || !c) return;
+    const { ctx, chartArea: a, scales: { x, y } } = chart;
+    const px = x.getPixelForValue(c.idx);
+    ctx.save();
+    ctx.strokeStyle = css('--ink-2'); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(px, a.top); ctx.lineTo(px, a.bottom); ctx.stroke();
+    // marker dots on the tracked series at the hovered day
+    (opts.dots || []).forEach(di => {
+      const meta = chart.getDatasetMeta(di); const pt = meta && meta.data[c.idx];
+      if (!pt || chart.data.datasets[di].data[c.idx] == null) return;
+      ctx.beginPath(); ctx.arc(pt.x, pt.y, 4.5, 0, Math.PI * 2);
+      ctx.fillStyle = css('--card'); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = chart.data.datasets[di].borderColor; ctx.stroke();
+    });
+    if (c.y != null && opts.fmt) {
+      ctx.setLineDash([4, 4]); ctx.strokeStyle = css('--ink-3');
+      ctx.beginPath(); ctx.moveTo(a.left, c.y); ctx.lineTo(a.right, c.y); ctx.stroke(); ctx.setLineDash([]);
+      const label = opts.fmt(y.getValueForPixel(c.y));
+      ctx.font = "600 11px 'Public Sans', sans-serif";
+      const w = ctx.measureText(label).width + 12, h = 20;
+      const lx = a.right - w, ly = Math.max(a.top, Math.min(a.bottom - h, c.y - h / 2));
+      ctx.fillStyle = css('--ink'); ctx.beginPath(); ctx.roundRect(lx, ly, w, h, 4); ctx.fill();
+      ctx.fillStyle = css('--bg'); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, lx + w / 2, ly + h / 2 + .5);
+    }
+    ctx.restore();
+  },
+};
+Chart.register(regimeBandsPlugin, todayLinePlugin, moveLabelsPlugin, regimeOnsetPlugin, crosshairPlugin);
 
 function drawStockCharts(sym, moves) {
   chartTheme();
@@ -750,7 +806,7 @@ function drawStockCharts(sym, moves) {
     const paths = [s.egarch_path, s.timesfm_alone_path, s.timesfm_together_path].map(p => p || []);
     const hiP = fd.map((_, i) => Math.max(...paths.map(p => p[i]).filter(isNum)));
     const loP = fd.map((_, i) => Math.min(...paths.map(p => p[i]).filter(isNum)));
-    activeCharts.push(new Chart(cv, {
+    const volF = new Chart(cv, {
       type: 'line',
       data: {
         labels,
@@ -768,21 +824,32 @@ function drawStockCharts(sym, moves) {
         plugins: {
           legend: { display: false },
           todayLine: { index: last },
-          tooltip: tooltipStyle({
-            callbacks: {
-              title: (items) => longDate(labels[items[0].dataIndex]) + (items[0].dataIndex > last ? ' · forecast' : items[0].dataIndex === last ? ' · today' : ''),
-              label: (c) => ` ${c.dataset.label}: ${pct(c.raw)}`,
-              footer: (items) => {
-                const i = items[0].dataIndex - rd.length;
-                if (i < 0) return '';
-                return `Model range ${pct(loP[i])}–${pct(hiP[i])} · typical move to date ±${pct(horizonMove(hiP[i]) * Math.sqrt((i + 1) / (DATA.horizon_days || 42)), 0)}`;
-              },
-            },
-          }),
+          tooltip: { enabled: false },
         },
         scales: { x: dateAxis(labels), y: valueAxis(v => v + '%', { title: { display: true, text: 'Annualized volatility' } }) },
       },
-    }));
+    });
+    activeCharts.push(volF);
+    volF.$crossCfg = {
+            dots: [2, 3, 4, 5], fmt: (v) => pct(v),
+            onMove: (idx) => {
+              const ro = $('#roVol'); if (!ro) return;
+              if (idx == null) { ro.innerHTML = volReadoutDefault(st); return; }
+              const d = labels[idx];
+              if (idx <= last) {
+                ro.innerHTML = `<b>${longDate(d)}${idx === last ? ' · today' : ''}</b>
+                  <span>Realized <b>${pct(rvv[idx])}</b></span>
+                  <span class="muted">20-day, annualized · typical 2-month move ±${pct(horizonMove(rvv[idx]), 0)}</span>`;
+              } else {
+                const i = idx - rd.length;
+                ro.innerHTML = `<b>${longDate(d)} · forecast</b>
+                  <span><i class="sw dash" style="border-color:var(--s-eg)"></i>EGARCH <b>${pct(paths[0][i])}</b></span>
+                  <span><i class="sw dash" style="border-color:var(--s-tf)"></i>TimesFM <b>${pct(paths[1][i])}</b></span>
+                  <span><i class="sw dot" style="border-color:var(--s-tf2)"></i>+ sector <b>${pct(paths[2][i])}</b></span>
+                  <span class="muted">range ${pct(loP[i])}–${pct(hiP[i])} · day ${i + 1} of ${fd.length}</span>`;
+              }
+            },
+    };
   }
 
   // --- price with regime bands and big moves
@@ -791,7 +858,19 @@ function drawStockCharts(sym, moves) {
     const moveIdx = Object.fromEntries(moves.map(m => [m.i, m]));
     const movePts = P.close.map((v, i) => moveIdx[i] ? v : null);
     const moveLabels = P.close.map((_, i) => moveIdx[i] ? { text: signed(moveIdx[i].r) + '%', r: moveIdx[i].r } : null);
-    activeCharts.push(new Chart(cp, {
+    const volChart = new Chart($('#cVolume'), {
+      type: 'bar',
+      data: { labels: P.dates, datasets: [{ label: 'Volume', data: P.volume, backgroundColor: P.close.map((_, i) => moveIdx[i] ? css('--ink-3') : css('--s-vol')), borderWidth: 0, barPercentage: 1, categoryPercentage: .9 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false, events: [],
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: { x: { display: false }, y: valueAxis(v => (v / 1e6).toFixed(0) + 'M', { ticks: { maxTicksLimit: 3, callback: v => (v / 1e6).toFixed(0) + 'M' } }) },
+      },
+    });
+    activeCharts.push(volChart);
+    volChart.$crossCfg = {};
+    const info = s.info || {};
+    const priceChart = new Chart(cp, {
       type: 'line',
       data: {
         labels: P.dates,
@@ -808,34 +887,45 @@ function drawStockCharts(sym, moves) {
         plugins: {
           legend: { display: false },
           regimeBands: { labels: P.dates, alpha: 0.13 },
-          tooltip: tooltipStyle({
-            callbacks: {
-              title: (items) => longDate(P.dates[items[0].dataIndex]),
-              label: (c) => ` ${c.dataset.label}: ${money(c.raw)}`,
-              footer: (items) => {
-                const i = items[0].dataIndex;
-                const lines = [];
-                const k = regimeByDate()[P.dates[i]]; if (k) lines.push(`Market regime: ${k}`);
-                if (i > 0 && isNum(P.close[i]) && isNum(P.close[i - 1])) lines.push(`Day change: ${signed((P.close[i] / P.close[i - 1] - 1) * 100)}%` + (moveIdx[i] ? '  · one of the year’s largest' : ''));
-                if (isNum(P.volume && P.volume[i])) lines.push(`Volume: ${fmt(P.volume[i] / 1e6, 1)}M shares`);
-                return lines;
-              },
-            },
-          }),
+          tooltip: { enabled: false },
         },
         scales: { x: dateAxis(P.dates), y: valueAxis(v => '$' + v) },
       },
-    }));
-    activeCharts.push(new Chart($('#cVolume'), {
-      type: 'bar',
-      data: { labels: P.dates, datasets: [{ label: 'Volume', data: P.volume, backgroundColor: P.close.map((_, i) => moveIdx[i] ? css('--ink-3') : css('--s-vol')), borderWidth: 0, barPercentage: 1, categoryPercentage: .9 }] },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: tooltipStyle({ callbacks: { title: (it) => longDate(P.dates[it[0].dataIndex]), label: (c) => ` Volume: ${fmt(c.raw / 1e6, 1)}M shares` } }) },
-        scales: { x: { display: false }, y: valueAxis(v => (v / 1e6).toFixed(0) + 'M', { ticks: { maxTicksLimit: 3, callback: v => (v / 1e6).toFixed(0) + 'M' } }) },
-      },
-    }));
+    });
+    activeCharts.push(priceChart);
+    priceChart.$crossCfg = {
+            dots: [0, 1, 2], linked: [volChart], fmt: (v) => money(v),
+            onMove: (i) => {
+              const ro = $('#roPrice'); if (!ro) return;
+              if (i == null) { ro.innerHTML = priceReadoutDefault(P, info); return; }
+              const prev = i > 0 ? P.close[i - 1] : null;
+              const chg = isNum(prev) && isNum(P.close[i]) ? (P.close[i] / prev - 1) * 100 : null;
+              const k = regimeByDate()[P.dates[i]];
+              ro.innerHTML = `<b>${longDate(P.dates[i])}</b>
+                <span>Close <b>${money(P.close[i])}</b></span>
+                ${isNum(chg) ? `<span class="${chg >= 0 ? 'pos' : 'neg'}">${signed(chg)}% on the day${moveIdx[i] ? ' · one of the year’s largest moves' : ''}</span>` : ''}
+                <span><i class="sw" style="border-color:var(--s-ma50)"></i>50-day ${money(P.ma50 && P.ma50[i])}</span>
+                <span><i class="sw dash" style="border-color:var(--s-ma200)"></i>200-day ${money(P.ma200 && P.ma200[i])}</span>
+                <span>Volume ${isNum(P.volume && P.volume[i]) ? fmt(P.volume[i] / 1e6, 1) + 'M' : '—'}</span>
+                ${k ? `<span><i class="dot" style="background:${regimeColor(k)}"></i>${k}</span>` : ''}`;
+            },
+    };
   }
+}
+
+/* Readout text when the cursor is off the chart: the latest values. Bid / ask exist only
+   for the moment the data was exported, so they are shown here and labelled as such. */
+function priceReadoutDefault(P, info) {
+  const n = P.close.length - 1;
+  return `<b>Latest · ${longDate(P.dates[n])}</b>
+    <span>Close <b>${money(P.close[n])}</b></span>
+    ${isNum(info.bid) ? `<span>Bid <b>${money(info.bid)}</b> · Ask <b>${money(info.ask)}</b></span><span class="muted">bid/ask as of the data export</span>` : ''}
+    <span class="muted">Move across the chart for any day</span>`;
+}
+function volReadoutDefault(st) {
+  return `<b>Forecast, next ~2 months</b>
+    <span>EGARCH <b>${pct(st.eg)}</b></span><span>TimesFM <b>${pct(st.tf)}</b></span><span>+ sector <b>${pct(st.tfT)}</b></span>
+    <span class="muted">Recent ${pct(st.recent)} · move across the chart for any day</span>`;
 }
 
 /* Stacked regime probabilities for the past year with onset markers. */
@@ -977,7 +1067,7 @@ function renderPortfolio(view) {
   });
   drawWeights('equal');
 
-  requestAnimationFrame(() => { drawRegimeChart('cRegime'); drawPcaChart(); drawHeatmap(); });
+  drawRegimeChart('cRegime'); drawPcaChart(); drawHeatmap();
 }
 
 function drawPcaChart() {
@@ -1200,16 +1290,25 @@ function renderGlobe(view) {
         arcs += `<path class="map-arc" d="M${ox.toFixed(1)},${oy.toFixed(1)} Q${(mx - dy / len * k).toFixed(1)},${(my + dx / len * k).toFixed(1)} ${x.toFixed(1)},${y.toFixed(1)}" stroke="${volColor(statOf(sel).avg)}" stroke-width="${(r * .35).toFixed(2)}"/>`;
       });
     }
-    // label hubs greedily, busiest first, skipping any that would collide with a placed label
-    const labeled = new Set();
+    // label hubs greedily, busiest first; a label goes right or left of its dot and must clear
+    // every placed label and every visible hub marker
+    const labeled = new Map();
     if (sel || state.view === 'na') {
-      const placed = [];
-      shown.filter(h => !sel || hubCarriers[h].includes(sel))
-        .sort((a, b) => hubCarriers[b].length - hubCarriers[a].length)
-        .forEach(h => {
-          const [x, y] = proj(HUBS[h][2], HUBS[h][1]);
-          if (placed.every(([px, py]) => Math.abs(px - x) > r * 9 || Math.abs(py - y) > r * 3.2)) { placed.push([x, y]); labeled.add(h); }
-        });
+      const boxes = [];
+      const visible = shown.filter(h => !sel || hubCarriers[h].includes(sel));
+      const pts = Object.fromEntries(visible.map(h => [h, proj(HUBS[h][2], HUBS[h][1])]));
+      const hit = (a, b) => a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
+      visible.slice().sort((a, b) => hubCarriers[b].length - hubCarriers[a].length).forEach(h => {
+        const [x, y] = pts[h];
+        const w = r * 2.3 * .62 * h.length + r, ht = r * 2.6, gap = r * 2;
+        for (const side of ['right', 'left']) {
+          const box = side === 'right' ? [x + gap, y - ht / 2, x + gap + w, y + ht / 2] : [x - gap - w, y - ht / 2, x - gap, y + ht / 2];
+          if (box[0] < vb[0] || box[2] > vb[0] + vb[2]) continue;
+          const clear = boxes.every(b => !hit(box, b)) &&
+            visible.every(o => o === h || !hit(box, [pts[o][0] - r * 1.6, pts[o][1] - r * 1.6, pts[o][0] + r * 1.6, pts[o][1] + r * 1.6]));
+          if (clear) { boxes.push(box); labeled.set(h, side); break; }
+        }
+      });
     }
     const hubs = shown.map(h => {
       const [name, lat, lon] = HUBS[h];
@@ -1223,7 +1322,7 @@ function renderGlobe(view) {
       return `<g class="hub${on ? '' : ' dim'}" data-h="${h}" tabindex="${on ? 0 : -1}" role="img" aria-label="${esc(label)}">
         <circle class="ring" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${rr.toFixed(2)}" stroke="${volColor(v)}" stroke-width="${(r * .45).toFixed(2)}"/>
         <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(rr * .45).toFixed(2)}" fill="${volColor(v)}"/>
-        ${showText ? (() => { const left = x + r * 9 > vb[0] + vb[2]; return `<text x="${(left ? x - rr - r * .5 : x + rr + r * .5).toFixed(1)}" y="${(y + r * .8).toFixed(1)}" text-anchor="${left ? 'end' : 'start'}" style="font-size:${(r * 2.3).toFixed(1)}px;stroke-width:${(r * .7).toFixed(1)}px">${h}</text>`; })() : ''}</g>`;
+        ${showText ? (() => { const left = labeled.get(h) === 'left'; return `<text x="${(left ? x - r * 2 : x + r * 2).toFixed(1)}" y="${(y + r * .8).toFixed(1)}" text-anchor="${left ? 'end' : 'start'}" style="font-size:${(r * 2.3).toFixed(1)}px;stroke-width:${(r * .7).toFixed(1)}px">${h}</text>`; })() : ''}</g>`;
     }).join('');
     box.innerHTML = `<svg viewBox="${vb.map(n => n.toFixed(1)).join(' ')}" role="group" aria-label="World map of airline hubs">
       <path class="map-grat" d="${P.gratD}" style="stroke-width:${(r * .12).toFixed(2)}"/>
