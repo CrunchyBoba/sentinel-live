@@ -324,6 +324,8 @@ a.lrow:hover, a.lrow:focus-visible, .lrow.is-current { background: var(--card-2)
 .cmp th button:hover { color: var(--ink); }
 .cmp th[aria-sort] button { color: var(--ink); }
 .cmp th .arrow { width: 10px; display: inline-block; }
+.cmp th .arrow svg { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; display: block; }
+.cmp th .arrow svg.up { transform: rotate(180deg); }
 .cmp tbody tr { cursor: pointer; transition: background-color .15s var(--ease); }
 .cmp tbody tr:hover td { background: var(--card-2); }
 .cmp td.co a { color: var(--ink); text-decoration: none; font-weight: 600; }

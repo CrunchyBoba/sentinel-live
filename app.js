@@ -397,7 +397,7 @@ function renderStocks(view, arg) {
       const sk = c.sortKey || c.k;
       const on = state.key === sk;
       const aria = on ? ` aria-sort="${state.dir < 0 ? 'descending' : 'ascending'}"` : '';
-      return `<th scope="col"${aria}${c.title ? ` title="${esc(c.title)}"` : ''}><button type="button" data-k="${sk}">${c.label}<span class="arrow" aria-hidden="true">${on ? (state.dir < 0 ? '↓' : '↑') : ''}</span></button></th>`;
+      return `<th scope="col"${aria}${c.title ? ` title="${esc(c.title)}"` : ''}><button type="button" data-k="${sk}">${c.label}<span class="arrow" aria-hidden="true">${on ? `<svg viewBox="0 0 10 10"${state.dir < 0 ? '' : ' class="up"'}><path d="M2 3.5l3 3 3-3"/></svg>` : ''}</span></button></th>`;
     }).join('') + '</tr>';
   }
   function drawBody() {
@@ -685,8 +685,8 @@ const todayLinePlugin = {
     ctx.beginPath(); ctx.moveTo(px, a.top); ctx.lineTo(px, a.bottom); ctx.stroke();
     ctx.setLineDash([]);
     ctx.fillStyle = css('--ink-2'); ctx.font = "600 11px 'Public Sans', sans-serif";
-    ctx.textAlign = 'left'; ctx.fillText('Forecast →', px + 6, a.top + 12);
-    ctx.textAlign = 'right'; ctx.fillText('← History', px - 6, a.top + 12);
+    ctx.textAlign = 'left'; ctx.fillText('Forecast', px + 6, a.top + 12);
+    ctx.textAlign = 'right'; ctx.fillText('History', px - 6, a.top + 12);
     ctx.restore();
   },
 };
