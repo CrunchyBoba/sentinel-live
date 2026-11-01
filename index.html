@@ -8,11 +8,12 @@
   <script>
     /* Apply the saved theme before first paint (light is the default). */
     try { if (localStorage.getItem('sentinel-theme') === 'dark') document.documentElement.dataset.theme = 'dark'; } catch (e) {}
+    try { if (localStorage.getItem('sentinel-side') === 'collapsed') document.documentElement.dataset.side = 'collapsed'; } catch (e) {}
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Display&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="maplibre-gl.css" />
+  <link rel="stylesheet" href="vendor/maplibre-gl.css" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -67,6 +68,9 @@
 
     <div class="main">
       <div class="crumbbar">
+        <button class="side-toggle" id="sideToggle" type="button" aria-label="Hide sidebar" aria-pressed="false" title="Hide sidebar">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M9.5 4.5v15M6 9h1.5M6 12h1.5"/></svg>
+        </button>
         <p class="crumbs" id="crumbs">Research</p>
         <p class="asof-chip" id="asofChip"></p>
       </div>
@@ -90,9 +94,9 @@
 
   <div class="tip" id="tip" role="tooltip" hidden></div>
 
-  <script src="chart.umd.js"></script>
-  <script src="topojson-client.min.js"></script>
-  <script src="maplibre-gl.js"></script>
+  <script src="vendor/chart.umd.js"></script>
+  <script src="vendor/topojson-client.min.js"></script>
+  <script src="vendor/maplibre-gl.js"></script>
   <script src="globe.js"></script>
   <script src="app.js"></script>
 </body>

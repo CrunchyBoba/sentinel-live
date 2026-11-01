@@ -1,6 +1,6 @@
 /* ============================================================
    Sentinel — single-page research site
-   Loads sentinel_data.json (produced by the Colab notebook)
+   Loads data/sentinel_data.json (written daily by pipeline/update_model.py)
    and renders Overview / Stocks / Portfolio / Globe / Lab / Glossary.
    ============================================================ */
 
@@ -46,6 +46,7 @@ const bigMoney = (x) => {
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const dataDate = () => DATA.data_through || (DATA.generated || '').split(' ')[0];
 const shortDate = (d) => { if (!d) return ''; const [y, m, dd] = d.split('-'); return `${MONTHS[+m - 1]} ${+dd}`; };
 const longDate = (d) => { if (!d) return '—'; const [y, m, dd] = d.split('-'); return `${MONTHS[+m - 1]} ${+dd}, ${y}`; };
 const ordinal = (n) => n + (['th', 'st', 'nd', 'rd'][(n % 100 - 20) % 10] || ['th', 'st', 'nd', 'rd'][n % 100] || 'th');
@@ -217,7 +218,7 @@ function router(keepFocus) {
     console.error(e);
     view.innerHTML = `<div class="errorbox"><h2>This page couldn't be drawn</h2>
       <p>Something in the data file didn't match what this page expects. Try reloading; if it keeps happening,
-      re-export <code>sentinel_data.json</code> from the notebook.</p><p><a href="#/overview">Back to the overview</a></p></div>`;
+      re-run the daily update (Actions → Daily update → Run workflow).</p><p><a href="#/overview">Back to the overview</a></p></div>`;
   }
   if (!keepFocus) { view.focus({ preventScroll: true }); if (!(tab === 'glossary' && arg)) scrollTo(0, 0); }
 }
@@ -293,7 +294,7 @@ function renderOverview(view) {
     ${reg ? `<div class="ov-regime">
       <div class="reads"><span class="big">${esc(reg.name)}</span><span class="pr">${pct(reg.p * 100, 0)} likely</span></div>
       <p>Market regime today. ${esc(REGIME_WORDS[reg.name] || '')} The strip shows the past 12 months.</p>
-      <p class="ov-date">Data as of ${esc(longDate((DATA.generated || '').split(' ')[0]))} · refreshed each time the research notebook runs</p>
+      <p class="ov-date">Prices through ${esc(longDate(dataDate()))} · the models re-run automatically after every trading day</p>
       <div class="canvas-box" role="img" aria-label="${esc(regimeSummary())}"><canvas id="cOvRegime"></canvas></div>
     </div>` : ''}`;
   top.appendChild(feat);
@@ -503,6 +504,9 @@ function renderStockDetail(view, sym) {
     </div>`;
   view.appendChild(vc);
 
+  // how good have these forecasts been?
+  renderTrackRecord(view, sym);
+
   // price chart with regime shading + big moves
   const moves = bigMoves(s.price, 6);
   const pc = el('section', { class: 'card chartcard', 'aria-labelledby': 'pcTitle' });
@@ -569,6 +573,157 @@ function renderStockDetail(view, sym) {
   if (s.price) $('#roPrice').innerHTML = priceReadoutDefault(s.price, info);
 }
 const zWord = (z, pos, neg) => !isNum(z) ? '—' : Math.abs(z) < 0.15 ? 'Neutral' : (z > 0 ? pos : neg).replace(/^./, m => m.toUpperCase());
+
+/* ---- track record: every logged forecast scored against what happened ---- */
+const TRACK_MODELS = { egarch: ['EGARCH', '--s-eg'], timesfm_alone: ['TimesFM', '--s-tf'], timesfm_together: ['TimesFM + sector', '--s-tf2'] };
+const VERDICT = {
+  day: { ok: ['Well calibrated', '--calm'], under: ['Underestimating risk', '--crisis'], over: ['Overestimating risk', '--stress'] },
+  bias: { ok: ['On target', '--calm'], under: ['Running low: underestimating', '--crisis'], over: ['Running high: overestimating', '--stress'] },
+};
+let TRACK_MODEL = 'egarch';
+let TRACK_HORIZON = 'm2';
+
+function renderTrackRecord(view, sym) {
+  const T = DATA.track && DATA.track.tickers && DATA.track.tickers[sym];
+  if (!T || !Object.keys(T).length) {
+    view.appendChild(el('section', { class: 'notlive chartcard' }, `<h3>Track record <span class="tag soon">Not live yet</span></h3>
+      <p>Every day the pipeline will log each model's forecasts and later score them against what actually happened.
+      The record appears here after the first daily run.</p>`));
+    return;
+  }
+  if (!T[TRACK_MODEL]) TRACK_MODEL = Object.keys(T)[0];
+  const start = DATA.track.start, firstLive = DATA.track.first_live;
+  const sec = el('section', { class: 'card chartcard track', 'aria-labelledby': 'trTitle' });
+  sec.innerHTML = `<div class="cc-head"><div><h3 id="trTitle">Track record: how these forecasts have done</h3>
+      <p>Every forecast is logged before its outcome exists, then scored once the days pass. Misses count as much as hits.</p></div>
+      <div class="seg" role="group" aria-label="Model">${Object.entries(TRACK_MODELS).filter(([k]) => T[k]).map(([k, [n]]) =>
+        `<button type="button" data-m="${k}" aria-pressed="${k === TRACK_MODEL}">${n}</button>`).join('')}</div></div>
+    <div class="trgrid" id="trGrid"></div>
+    <h4 class="trsub">Next-day check: the forecast's 95% range vs the move that followed</h4>
+    <div class="canvas-box" role="img" aria-label="Daily forecast ranges and the actual next-day moves for ${sym}"><canvas id="cTrDay"></canvas></div>
+    <div class="keyrow">
+      <span><i class="sw box" style="background:var(--s-band)"></i> Forecast range for the next day (95%)</span>
+      <span><i class="sw pt" style="border-color:var(--ink-3)"></i> Actual move, inside</span>
+      <span><i class="sw pt" style="border-color:var(--crisis);background:var(--crisis)"></i> Actual move, outside</span>
+      <span><i class="sw dash" style="border-color:var(--ink-3)"></i> Live log starts</span>
+    </div>
+    <div class="cc-head" style="margin:1.6rem 0 .6rem"><h4 class="trsub" style="margin:0">Forecast volatility vs what happened</h4>
+      <div class="seg" role="group" aria-label="Horizon"><button type="button" data-h="w1" aria-pressed="${TRACK_HORIZON === 'w1'}">1 week</button><button type="button" data-h="m2" aria-pressed="${TRACK_HORIZON === 'm2'}">2 months</button></div></div>
+    <div class="canvas-box" role="img" aria-label="Forecast volatility and realized volatility by forecast date for ${sym}"><canvas id="cTrVol"></canvas></div>
+    <div class="keyrow" id="trVolKey"></div>
+    <h4 class="trsub" style="margin-top:1.6rem">Latest next-day checks</h4>
+    <div id="trLatest"></div>
+    <p class="note" style="margin:.9rem 0 0">Before ${esc(longDate(firstLive || start))} the record is <b>reconstructed</b>: each day was re-run walk-forward,
+      using only prices available on that day. From ${esc(longDate(firstLive || start))} on, forecasts are <b>logged live</b> by the daily run.
+      A well-calibrated model sees about 95 moves in 100 land inside its range; far fewer means it underestimates risk.
+      ${termLink('How this is measured', 'Track record')}.</p>`;
+  view.appendChild(sec);
+
+  const draw = () => {
+    const e = T[TRACK_MODEL];
+    $('#trGrid').innerHTML = trackCards(e, start);
+    $('#trLatest').innerHTML = trackLatest(e.series);
+    activeCharts = activeCharts.filter(c => { if (c.canvas && c.canvas.id.startsWith('cTr')) { c.destroy(); return false; } return true; });
+    drawTrackCharts(e.series, TRACK_MODEL);
+  };
+  sec.addEventListener('click', (ev) => {
+    const m = ev.target.closest('button[data-m]'), h = ev.target.closest('button[data-h]');
+    if (m) { TRACK_MODEL = m.dataset.m; $$('button[data-m]', sec).forEach(b => b.setAttribute('aria-pressed', b === m)); draw(); }
+    if (h) { TRACK_HORIZON = h.dataset.h; $$('button[data-h]', sec).forEach(b => b.setAttribute('aria-pressed', b === h)); draw(); }
+  });
+  requestAnimationFrame(draw);
+}
+
+function trackCards(e, start) {
+  const v = (kind, key) => { const x = VERDICT[kind][key]; return x ? `<span class="verdict"><i style="background:var(${x[1]})"></i>${x[0]}</span>` : ''; };
+  const a = e.all || {}, si = e.since || {};
+  const day = a.day, sd = si.day;
+  const card1 = day ? `<div><p class="lbl">Next day · 95% range</p>
+      <p class="fig">${pct(day.hit * 100, 0)}<small>inside</small></p>${v('day', day.verdict)}
+      <p class="d">${fmtInt(day.inside)} of ${fmtInt(day.n)} moves landed inside (target about 95%). Actual moves ran
+      <b>${fmt(day.calib, 2)}×</b> the forecast size.${sd ? ` Since ${esc(shortDate(start))}: ${sd.inside} of ${sd.n}.` : ''}</p></div>`
+    : '<div><p class="lbl">Next day</p><p class="d">No scored days yet.</p></div>';
+  const hz = (key, label, wait) => {
+    const x = a[key], y = si[key];
+    if (!x) return `<div><p class="lbl">${label}</p><p class="fig">—</p><p class="d">${wait}</p></div>`;
+    return `<div><p class="lbl">${label}</p><p class="fig">${fmt(x.mae, 1)}<small>pts average miss</small></p>${v('bias', x.verdict)}
+      <p class="d">Forecasts ran <b>${signed(x.bias)} pts</b> ${x.bias >= 0 ? 'above' : 'below'} actual volatility (actual averaged ${pct(x.actual_mean, 0)}), over ${fmtInt(x.n)} forecasts.
+      ${y ? `Since ${esc(shortDate(start))}: ${fmt(y.mae, 1)} pts across ${y.n}.` : `Forecasts made since ${esc(shortDate(start))} are scored once their window ends.`}</p></div>`;
+  };
+  return card1 + hz('w1', '1 week ahead', 'Scored 5 trading days after each forecast.') + hz('m2', '2 months ahead · the model\'s target', 'Scored 42 trading days after each forecast.');
+}
+
+function trackLatest(S) {
+  const rows = [];
+  for (let i = S.made_on.length - 1; i >= 0 && rows.length < 7; i--) {
+    if (S.next_ret[i] == null) continue;
+    const inside = Math.abs(S.next_ret[i]) <= S.band[i];
+    rows.push(`<tr><td>${esc(longDate(S.next_date ? S.next_date[i] : S.made_on[i]))}</td><td>±${fmt(S.band[i], 1)}%</td>
+      <td>${signed(S.next_ret[i], 1)}%</td><td><span class="verdict"><i style="background:var(${inside ? '--calm' : '--crisis'})"></i>${inside ? 'Inside' : 'Outside'}</span></td>
+      <td>${S.source[i] === 'l' ? '<span class="tag live">Live</span>' : '<span class="tag">Reconstructed</span>'}</td></tr>`);
+  }
+  if (!rows.length) return '<p class="note">No next-day checks yet.</p>';
+  return `<div class="tablewrap"><table class="cmp trtbl"><thead><tr><th scope="col">Day of the move</th><th scope="col">Forecast range</th>
+    <th scope="col">Actual move</th><th scope="col">Result</th><th scope="col">Logged</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
+}
+
+const trackStartPlugin = {
+  id: 'trackStart',
+  afterDatasetsDraw(chart, args, opts) {
+    if (!opts || opts.index == null || opts.index < 0) return;
+    const { ctx, chartArea: a, scales: { x } } = chart;
+    const px = x.getPixelForValue(opts.index);
+    ctx.save(); ctx.strokeStyle = css('--ink-3'); ctx.setLineDash([3, 3]); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(px, a.top); ctx.lineTo(px, a.bottom); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = css('--ink-2'); ctx.font = "600 11px 'Public Sans', sans-serif";
+    ctx.textAlign = 'right'; ctx.fillText('Reconstructed', px - 6, a.top + 12);
+    if (a.right - px > 34) { ctx.textAlign = 'left'; ctx.fillText('Live', px + 6, a.top + 12); }
+    ctx.restore();
+  },
+};
+Chart.register(trackStartPlugin);
+
+function drawTrackCharts(S, model) {
+  chartTheme();
+  const labels = S.made_on.map((d, i) => (S.next_date && S.next_date[i]) || d);
+  const liveIdx = S.source.indexOf('l');
+  const band = css('--s-band'), crisis = css('--crisis'), muted = css('--ink-3');
+  const outside = S.next_ret.map((r, i) => r != null && Math.abs(r) > S.band[i]);
+  activeCharts.push(new Chart($('#cTrDay'), {
+    type: 'line',
+    data: { labels, datasets: [
+      { label: 'Range top', data: S.band, borderWidth: 0, pointRadius: 0, fill: '+1', backgroundColor: band, tipHide: true },
+      { label: 'Range bottom', data: S.band.map(b => b == null ? null : -b), borderWidth: 0, pointRadius: 0, fill: false, tipHide: true },
+      { label: 'Actual move', data: S.next_ret, showLine: false, pointRadius: outside.map(o => o ? 4.5 : 2.4),
+        pointBackgroundColor: outside.map(o => o ? crisis : muted), pointBorderColor: outside.map(o => o ? crisis : muted), pointHoverRadius: 6 },
+    ] },
+    options: { maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { display: false }, trackStart: { index: liveIdx },
+        tooltip: tooltipStyle({ filter: (it) => it.datasetIndex === 2 && it.raw != null,
+          callbacks: { title: (it) => longDate(labels[it[0].dataIndex]),
+            label: (it) => ` Move ${signed(it.raw, 2)}% vs range ±${fmt(S.band[it.dataIndex], 2)}%`,
+            footer: (it) => outside[it[0].dataIndex] ? 'Outside the range' : 'Inside the range' } }) },
+      scales: { x: dateAxis(labels), y: valueAxis(v => v + '%') } },
+  }));
+
+  const key = TRACK_HORIZON, col = css(TRACK_MODELS[model][1]);
+  const f = S[key + '_vol'], act = S[key + '_actual'];
+  activeCharts.push(new Chart($('#cTrVol'), {
+    type: 'line',
+    data: { labels: S.made_on, datasets: [
+      { label: 'Forecast', data: f, borderColor: col, borderWidth: 2, pointRadius: 0, tension: .2 },
+      { label: 'What happened', data: act, borderColor: css('--s-real'), borderWidth: 2, pointRadius: 0, tension: .2, spanGaps: false },
+    ] },
+    options: { maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { display: false }, trackStart: { index: liveIdx },
+        tooltip: tooltipStyle({ callbacks: { title: (it) => 'Forecast made ' + longDate(S.made_on[it[0].dataIndex]), label: (it) => ` ${it.dataset.label}: ${pct(it.raw, 1)}` } }) },
+      scales: { x: dateAxis(S.made_on), y: valueAxis(v => v + '%') } },
+  }));
+  const pending = act.filter(v => v == null).length;
+  $('#trVolKey').innerHTML = `<span><i class="sw" style="border-color:${col}"></i> ${esc(TRACK_MODELS[model][0])} forecast, average over the next ${key === 'w1' ? '5' : '42'} trading days</span>
+    <span><i class="sw" style="border-color:var(--s-real)"></i> Volatility that actually happened</span>
+    ${pending ? `<span class="note">The last ${pending} forecast${pending > 1 ? 's are' : ' is'} still inside ${pending > 1 ? 'their' : 'its'} window</span>` : ''}`;
+}
 
 /* ---- narrative generator (one template, numbers swapped) ---- */
 function buildNarrative(sym) {
@@ -1193,6 +1348,9 @@ const GLOSSARY = [
     ['PCA', 'Principal component analysis: finds the few underlying patterns that explain most of how a group of stocks move. The first pattern here is the shared “airline sector” factor.'],
     ['ARIMA', 'A classical forecasting model that predicts a series from its own recent values and recent errors. A standard baseline.'],
     ['Zero-shot', 'Using a pre-trained model as-is on a new problem, without any extra training on your data.'],
+    ['Track record', 'How Sentinel scores its own forecasts. Each day every model’s forecast is logged before the outcome exists. Next day: does the move land inside the forecast’s 95% range (it should about 95% of the time)? One week and two months: how far forecast volatility was from the volatility that actually happened. Earlier days are reconstructed walk-forward, using only prices available on each day.'],
+    ['Backtest', 'Testing a model on past data as if it were run at the time, using only information available then. Sentinel’s reconstructed track record is a walk-forward backtest.'],
+    ['Calibration', 'Whether a model’s stated uncertainty matches reality. If a 95% range catches far fewer than 95% of outcomes, the model underestimates risk; if it catches nearly all of them, it overestimates.'],
   ]],
   ['Risk & volatility', [
     ['Volatility', 'How much a price swings, usually the standard deviation of returns. Higher volatility means bigger, less predictable moves, in either direction.'],
@@ -1280,9 +1438,9 @@ function drawSidebar() {
       <div class="bar" role="img" aria-label="${REGIMES.map(k => `${k} ${pct((reg.all[k] || 0) * 100, 0)}`).join(', ')}">${REGIMES.map(k => `<i style="width:${((reg.all[k] || 0) * 100).toFixed(1)}%;background:${regimeColor(k)}"></i>`).join('')}</div>
       <a href="#/glossary/regime">What's a regime?</a>`;
   }
-  const d = (DATA.generated || '').split(' ')[0];
+  const d = dataDate();
   $('#asofChip').innerHTML = `<i aria-hidden="true"></i>Data as of ${esc(longDate(d))}`;
-  $('#sideMeta').textContent = `Snapshot from the research notebook, ${longDate(d)}.`;
+  $('#sideMeta').textContent = `Models re-run daily; prices through ${longDate(d)}.`;
   $('#navCount').textContent = DATA.tickers.length;
 }
 
@@ -1291,6 +1449,19 @@ async function boot() {
   $('#footYear').textContent = new Date().getFullYear();
   $('#themeSwitch').setAttribute('aria-checked', document.documentElement.dataset.theme === 'dark' ? 'true' : 'false');
   $('#themeSwitch').addEventListener('click', () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark', true));
+  // collapsible sidebar (desktop); the choice is remembered
+  const syncSide = () => {
+    const off = document.documentElement.dataset.side === 'collapsed';
+    const t = $('#sideToggle'); t.setAttribute('aria-pressed', String(off));
+    t.setAttribute('aria-label', off ? 'Show sidebar' : 'Hide sidebar'); t.title = off ? 'Show sidebar' : 'Hide sidebar';
+  };
+  $('#sideToggle').addEventListener('click', () => {
+    const off = document.documentElement.dataset.side !== 'collapsed';
+    if (off) document.documentElement.dataset.side = 'collapsed'; else delete document.documentElement.dataset.side;
+    try { localStorage.setItem('sentinel-side', off ? 'collapsed' : 'open'); } catch (e) {}
+    syncSide();
+  });
+  syncSide();
   $('#menuToggle').addEventListener('click', () => {
     const open = !$('#sideNav').classList.contains('open');
     $('#sideNav').classList.toggle('open', open);
@@ -1302,12 +1473,12 @@ async function boot() {
   bindTip(document.body, '[data-def]', (n) => { const g = GLOSS_INDEX[n.dataset.def]; return g ? `<span class="t-h">${esc(g[0])}</span>${esc(g[1])}<span class="t-n">Click for the glossary</span>` : ''; });
   window.addEventListener('hashchange', () => router());
   try {
-    const res = await fetch('sentinel_data.json', { cache: 'no-store' });
+    const res = await fetch('data/sentinel_data.json', { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     DATA = await res.json();
   } catch (e) {
     $('#view').innerHTML = `<div class="errorbox"><h2>Couldn't load the research data</h2>
-      <p>The site expects <code>sentinel_data.json</code> next to <code>index.html</code>. If you opened the file
+      <p>The site expects <code>data/sentinel_data.json</code>. If you opened the file
       straight from disk, browsers block that: run a small local server (<code>python -m http.server</code>) or view it on GitHub Pages.</p>
       <p class="note">Details: ${esc(e.message)}</p></div>`;
     return;

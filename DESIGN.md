@@ -349,6 +349,20 @@ A MapLibre 3D globe in a map card, between two panels. Ocean is card mixed 10% t
 - Hazards: earthquakes are hollow ink-2 rings sized by magnitude; storms are stress dots with a dashed stress track; wildfires are small crisis dots; other EONET events are ink-3 dots. Night is ink at 16% (black at 38% at night), recomputed every minute.
 - Beneath the map: a selected-carriers table (the comparison-table style) and a source list where each feed shows a Live tag with its age, a dashed "Last update failed" tag, or "Not run yet".
 
+### Globe console (full screen)
+The one deliberate exception to the research-desk look. A **Full screen** button on the globe opens an instrument view filling the screen (Fullscreen API, with a fixed-overlay fallback; Esc exits). It reuses the night token set, slightly darker, scoped to the console container so the rest of the site keeps the user's theme.
+- A 42px top bar and a 34px bottom bar on the ground colour at 92%, hairline-divided: brand `SENTINEL // GLOBAL OPS`, sector, tracked carriers, snapshot time and age, a live UTC clock in link mint; bottom bar shows cursor or centre coordinates, zoom, bearing and per-layer counts.
+- Readouts use `ui-monospace` at 0.72rem, upper case, 0.06em tracking. This is the only place upper-case or monospace labels are allowed.
+- Thin link-mint corner ticks (18px, 1.5px) frame the map; a 15° link-mint graticule at 22% sits under the land.
+- The sector and layer panels float over the map on the card colour at 90% with a 6px backdrop blur; "Hide panels" removes them for an unobstructed globe.
+- Still no glows, neon accents, scanlines or animated chrome.
+
+### Track record
+On each stock page, after the forecast chart: a three-column ruled row (next day, 1 week, 2 months) with a Caslon figure, a verdict line with a 9px dot (calm = on target or well calibrated, stress = overestimating, crisis = underestimating) and a sentence with counts. Below: the next-day chart (95% range as the brass band, actual moves as ink-muted points, misses as larger crisis points, a dashed "Reconstructed | Live" divider), a forecast-vs-actual chart with a 1 week / 2 months segmented control, and a "Latest next-day checks" table with Live / Reconstructed tags. A segmented control switches between the three models.
+
+### Sidebar toggle
+A 34px icon button at the start of the breadcrumb bar hides the sidebar on desktop and widens the content to 1500px; the choice persists in `localStorage` key `sentinel-side` and is applied before first paint.
+
 ### Tooltip
 One shared tooltip: ink ground, stone text, 6px, 0.84rem, max 300px, with a bold head, key/value rows and a small note. Follows the pointer or focused element; in the dark theme it naturally inverts to a light card.
 
@@ -364,7 +378,7 @@ One shared tooltip: ink ground, stone text, 6px, 0.84rem, max 300px, with a bold
 - **Do** use authored inline SVG icons, stroke-only, 1.6 to 1.8 stroke width, round caps.
 
 ### Don't:
-- **Don't** bring back the dark neon quant dashboard: no glows, neon accents or walls of identical metric tiles.
+- **Don't** bring back the dark neon quant dashboard: no glows, neon accents or walls of identical metric tiles. (The globe console is the one dark instrument view, and it still has no glows or neon.)
 - **Don't** show BULLISH/BEARISH or any directional label as a headline, and don't render directional composite signals unless the data export contains them.
 - **Don't** put eyebrow or kicker labels above headings.
 - **Don't** use coloured side-stripe borders on cards, rows or callouts.

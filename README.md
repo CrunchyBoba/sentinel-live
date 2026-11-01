@@ -1,157 +1,112 @@
-# Sentinel — Volatility Research Site
+# Sentinel — Airline Volatility Research
 
-A static website for Sentinel's airline-volatility research. It reads one data file
-(`sentinel_data.json`, produced by your Colab notebook) and renders six sections:
-**Overview, Lab, Stocks, Globe, Portfolio, Glossary.**
+A static website (GitHub Pages) that forecasts how volatile the eight big U.S. airline stocks will be over the
+next ~2 months, shows the airline sector on a live 3D globe, and keeps an honest **track record** of how good
+its forecasts have been. A GitHub Action updates everything automatically after every trading day.
 
-It is a real, live site — not a demo. Everything is plain HTML/CSS/JavaScript with no
-build step and no server code, so it runs anywhere that serves static files, including
-GitHub Pages for free.
+Sections: **Overview, Stocks, Portfolio, Globe, Lab, Glossary.**
+
+*Not financial advice. Sentinel is an investment-research and education project.*
 
 ---
 
-## Files in this folder
+## What's in the repository
 
-| File | What it is | Do you edit it? |
+```
+index.html  app.js  globe.js  styles.css     the website (served by GitHub Pages from the top level)
+README.md  DESIGN.md  PRODUCT.md             docs: this file, the design system, the product brief
+
+data/                                        everything the site reads
+  sentinel_data.json     prices, forecasts, regimes, PCA, track record      (written daily)
+  forecast_log.csv       every forecast ever made, append-only               (written daily)
+  globe_data.json        flights, delays, weather, hazards, fuel             (written daily)
+  airports.csv           each airline's hubs and airports with coordinates   (edit by hand)
+  world-110m.json        world outline for the globe
+
+pipeline/                                    the code the daily Action runs
+  sentinel_model.py      the models: EGARCH, TimesFM-3, HMM regimes, PCA
+  update_model.py        prices -> forecasts -> data/sentinel_data.json, logging and scoring
+  update_globe_data.py   flights, FAA, weather, hazards, fuel -> data/globe_data.json
+  requirements.txt
+
+notebooks/
+  Airline_Volatility_Model_Sentinel.ipynb    Colab notebook; imports pipeline/sentinel_model.py
+
+vendor/                                      third-party libraries, bundled so the site needs no CDN
+  chart.umd.js  maplibre-gl.js  maplibre-gl.css  topojson-client.min.js
+
+.github/workflows/daily-update.yml           the daily schedule
+```
+
+## How it updates (nothing to do by hand)
+
+The **Daily update** Action runs every day at **12:17 UTC** (7:17 AM New York in winter, before the market opens):
+
+1. **Globe layers** → `data/globe_data.json`: OpenSky flights, FlightAware delay board, FAA airport programs,
+   airport weather (aviationweather.gov), National Weather Service alerts, USGS earthquakes, NASA EONET
+   (wildfires, storms, volcanoes, floods), NOAA hurricanes, and WTI crude (fuel exposure).
+2. **Models** → `data/sentinel_data.json`: downloads fresh prices, re-fits EGARCH, runs TimesFM-3 (alone and
+   with the sector), the HMM regimes and PCA, and writes the forecasts the Stocks, Portfolio and Overview
+   pages show. On weekends and market holidays there's no new close, so this step skips itself.
+3. **Track record**: today's forecasts are appended to `data/forecast_log.csv`, and every past forecast whose
+   outcome is now known is scored.
+4. The Action commits the data files; GitHub Pages republishes the site a minute later.
+
+**Run it now:** repository → **Actions** → **Daily update** → **Run workflow**. Tick *Re-run the models* to
+recompute even if today's close is already logged.
+**Change the time or frequency:** edit the `cron` line in `.github/workflows/daily-update.yml`.
+
+If one source fails (a website is down, an API changes), the others still update, the previous values are kept,
+and the Globe's "Where this data comes from" list says which source failed and when it last worked.
+
+### Settings the Action needs (already done)
+- **Settings → Actions → General → Workflow permissions → Read and write**, so it can commit data.
+- Repository secrets `OPENSKY_CLIENT_ID` and `OPENSKY_CLIENT_SECRET` for flights. Every other source is keyless.
+
+## The track record
+
+Every forecast is written to `data/forecast_log.csv` **before** its outcome exists and is never edited afterwards.
+Each stock page then scores the three models at three horizons:
+
+| Horizon | Question | What "good" looks like |
 |---|---|---|
-| `index.html` | Page shell, nav bar, footer | Rarely |
-| `styles.css` | All styling / theme | To restyle |
-| `app.js` | The whole app: router + all six tabs | To change behavior |
-| `chart.umd.js` | Chart.js 4.4.1 (bundled so the site needs no internet) | No |
-| `globe.js` | The Globe tab: 3D map, sector and carrier pickers, data layers | To change the Globe |
-| `maplibre-gl.js`, `maplibre-gl.css` | MapLibre GL 5.24.0, the 3D map engine (bundled) | No |
-| `data/airports.csv` | Each airline's hubs and airports with coordinates (open in Excel or Sheets) | To change a network |
-| `globe_data.json` | Live Globe layers: flights, delays, weather, hazards, fuel. **Written by the daily GitHub Action** | No |
-| `scripts/update_globe_data.py` | The script the Action runs to fetch the live layers | To add a source |
-| `.github/workflows/update-globe-data.yml` | The schedule (daily) for that script | To change how often |
-| `sentinel_data.json` | **Your data** — prices, forecasts, regimes, PCA | **Replace this to update the site** |
-| `.nojekyll` | Tells GitHub Pages to serve files as-is | No |
-| `README.md` | This file | — |
+| Next day | Did the next day's move land inside the forecast's 95% range? | About 95 in 100 inside. Far fewer = underestimating risk; nearly all = overestimating. |
+| 1 week | Forecast volatility vs actual volatility over the next 5 trading days | Small average miss, bias near zero |
+| 2 months | Forecast volatility vs actual over the next 42 trading days (the model's real target) | Small average miss, bias near zero |
 
----
+The record starts with about six months **reconstructed walk-forward** (each day re-run using only prices
+available that day), followed by **live** forecasts logged by the daily run. The site labels which is which, and
+reports both the full history and the results since **Oct 26, 2026**.
 
-## 1. Preview it on your own computer first
+## Preview locally
 
-You can't just double-click `index.html` — browsers block a page from reading a local
-`.json` file for security. Run a tiny local server instead:
+Browsers block a page from reading local data files, so run a small server:
 
 ```bash
-cd sentinel
-python -m http.server 8000
+python -m http.server 8000      # then open http://localhost:8000
 ```
 
-Then open **http://localhost:8000** in your browser. (Any static server works; this one
-ships with Python.)
-
----
-
-## 2. Put it on GitHub and go live (GitHub Pages)
-
-### Option A — the web interface (no command line)
-
-1. Go to <https://github.com/new> and create a repository, e.g. **`sentinel-site`**.
-   Make it **Public** (Pages is free for public repos). Don't add a README (you have one).
-2. On the new repo's page click **“uploading an existing file.”**
-3. Drag in **all the files in this folder** — `index.html`, `styles.css`, `app.js`,
-   `chart.umd.js`, `sentinel_data.json`, `.nojekyll`, `README.md`.
-   *(If the `.nojekyll` file is hard to drag because it starts with a dot, you can skip it —
-   it only matters if a filename ever starts with an underscore.)*
-4. Click **Commit changes**.
-5. Go to **Settings → Pages** (left sidebar).
-6. Under **Build and deployment → Source**, choose **Deploy from a branch**.
-   Set **Branch** to `main` and folder to `/ (root)`. Click **Save**.
-7. Wait ~1 minute. The page will show your live URL, like:
-   **`https://<your-username>.github.io/sentinel-site/`**
-
-That's it. Share that link.
-
-### Option B — with git (command line)
-
-```bash
-cd sentinel
-git init
-git add .
-git commit -m "Sentinel research site"
-git branch -M main
-git remote add origin https://github.com/<your-username>/sentinel-site.git
-git push -u origin main
-```
-
-Then do steps 5–7 above (Settings → Pages) to turn Pages on.
-
----
-
-## 3. Update the data later (this is the whole point)
-
-Whenever you re-run the Colab notebook:
-
-1. It downloads a fresh **`sentinel_data.json`**.
-2. Replace the old `sentinel_data.json` in your repo with the new one
-   (on GitHub: open the file → trash icon or **Upload files** → commit;
-   or `git add sentinel_data.json && git commit -m "update data" && git push`).
-3. The live site updates automatically within a minute. **You never touch the HTML/JS.**
-
-### Getting the news / delays / fuel numbers in
-
-The Stocks pages show a “fuel / news / operations” read and a BULLISH–BEARISH signal.
-Right now the site is using your **Sept-20 example** values as a placeholder (it says so
-on the page). To show live numbers:
-
-1. Run your `combine.py` so it writes `composite_<date>.csv`.
-2. In Colab, drag that CSV into the **Files** panel on the left (or put it in an `output/`
-   folder) **before** running the final export cell.
-3. The notebook picks it up automatically and bakes it into `sentinel_data.json`.
-   Re-upload that JSON and the placeholder note disappears.
-
----
-
-## What's intentionally a placeholder
-
-These match where your backend is today — nothing here is broken:
-
-- **Portfolio → “Enter your own holdings”** — the form is visible but disabled
-  (“Add · soon”), since custom-portfolio analysis isn't wired up. The **Model Airlines
-  Portfolio** with equal/random weights, the PCA, correlation heatmap and regime chart
-  are all live off your real data.
-- **Lab → “Open model”** buttons — disabled (“soon”). The six study models
-  (LR, ARIMA, LSTM, Transformer, Random Forest, XGBoost) are described; the interactive
-  runner isn't built. The four production models (EGARCH, TimesFM, HMM, PCA) are real and
-  power the Stocks/Portfolio pages.
-- **Forecasts & charts** — fixed snapshots from the last notebook run, as you asked.
-  They refresh only when you drop in a new `sentinel_data.json`.
-
----
-
-## The Globe tab and its daily update
-
-The Globe shows each airline's live flights, hubs and airports, FAA delays and ground stops, airport weather
-and alerts, natural hazards (earthquakes, hurricanes, wildfires, volcanoes, floods) and day/night shading.
-
-- **Hubs and airports** come from `data/airports.csv`, one row per airline and airport. Open it in Excel or
-  Google Sheets, add or remove rows (carrier, IATA and ICAO codes, role, name, city, country, lat, lon), save
-  as CSV and commit. The globe picks it up on the next page load.
-- **Everything live** comes from `globe_data.json`, written by the **Update globe data** GitHub Action:
-  - It runs **once a day** (12:17 UTC), whenever the script, the airports file or the workflow changes, and on
-    demand: repository → **Actions** → **Update globe data** → **Run workflow**.
-  - To run it more often, edit the `cron` line in `.github/workflows/update-globe-data.yml`
-    (for example `"17 */6 * * *"` is every 6 hours).
-  - It needs **Settings → Actions → General → Workflow permissions → Read and write** so it can commit the file.
-  - OpenSky flights use two repository secrets, `OPENSKY_CLIENT_ID` and `OPENSKY_CLIENT_SECRET`
-    (Settings → Secrets and variables → Actions). Every other source is free and keyless:
-    FAA NAS Status, aviationweather.gov, National Weather Service, USGS, NASA EONET, NOAA NHC, and the
-    FlightAware public board and Yahoo Finance (the same methods as the backend's `delays.py` and `fuel.py`).
-- If a source fails, the previous data is kept and the Globe's "Where this data comes from" list says so.
-- Flight positions are a **snapshot** from the last run, not a continuous live feed.
+To run the pipeline yourself: `pip install torch --index-url https://download.pytorch.org/whl/cpu`,
+`pip install -r pipeline/requirements.txt`, then `python pipeline/update_model.py` and
+`python pipeline/update_globe_data.py` (flights need the two OpenSky variables set).
 
 ## Customizing
 
-- **Colors / fonts:** all theme variables are at the top of `styles.css` (`:root { … }`).
-- **Glossary terms:** edit the `GLOSSARY` array near the bottom of `app.js`.
-- **Lab model descriptions:** edit the `groups` array in `renderLab()` in `app.js`.
-- **The company blurbs / narrative wording:** `buildNarrative()` in `app.js`.
+- **An airline's network:** edit `data/airports.csv` in Excel or Google Sheets (carrier, IATA and ICAO codes,
+  role, name, city, country, lat, lon). The Action re-runs on save.
+- **Model settings** (horizon, simulations, windows): the constants at the top of `pipeline/sentinel_model.py`.
+- **Colours / fonts:** the tokens at the top of `styles.css`; rules in `DESIGN.md`.
+- **Glossary terms:** the `GLOSSARY` array in `app.js`.
 
-No rebuild needed — save the file, refresh the page.
+## Placeholders (labelled on the site)
 
----
+- Globe: Banks, Energy, Shipping and Semiconductors sectors are shown as **Offline**.
+- Portfolio: "Your own holdings" entry is visible but not built yet.
+- Lab: interactive versions of the six study models aren't built yet.
+- Fuel / news / operations scores on stock pages appear only when a live composite file is exported.
 
-*Not financial advice. Sentinel is an investment-research and education project.*
+## Notes
+
+- Flight positions are a **daily snapshot**, not a continuous live feed.
+- TimesFM-3 weights are licensed for research and non-commercial use.
+- SkyWest and Republic fly for several airlines at once, so their flights aren't attributed to a carrier.

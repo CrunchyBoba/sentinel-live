@@ -1,6 +1,6 @@
 """Build globe_data.json for the Sentinel Globe tab.
 
-Runs on a schedule in GitHub Actions (.github/workflows/update-globe-data.yml).
+Runs daily in GitHub Actions (.github/workflows/daily-update.yml).
 Every source is optional: if one fails, the previous values are kept and the
 failure is recorded under "sources" so the site can say what is stale.
 
@@ -15,7 +15,7 @@ Sources (all free; only OpenSky uses a key, read from environment secrets):
   nhc        NOAA National Hurricane Center active storms
   fuel       WTI crude pressure and each carrier's fuel beta (yfinance, as fuel.py)
 
-Run locally:  python scripts/update_globe_data.py
+Run locally:  python pipeline/update_globe_data.py
 """
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = os.path.join(ROOT, "globe_data.json")
+OUT = os.path.join(ROOT, "data", "globe_data.json")
 AIRPORTS_CSV = os.path.join(ROOT, "data", "airports.csv")
 UA = "SentinelResearch/1.0 (github.com/CrunchyBoba/sentinel-live)"
 
