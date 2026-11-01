@@ -342,7 +342,12 @@ Sortable columns via header buttons (sorted column in ink), sticky first column,
 A table of 62 by 46px cells with 3px spacing and 4px corners, filled along the sequential ramp; the diagonal is dashed and empty. Hovering dims other cells to 45%, rings the cell in ink and underlines its row and column heads. A ramp legend bar sits beneath.
 
 ### Globe map
-An SVG world on the recess tone: land at 14% ink, card-coloured borders, hairline graticule. Hubs are card-filled rings stroked by the map ramp, with route arcs from the selected carrier at 55% opacity; unrelated hubs dim to 14%. A carrier list (pressed item in selection sage) drives selection, and a detail card shows Caslon figures and a single ladder row.
+A MapLibre 3D globe in a map card, between two panels. Ocean is card mixed 10% toward TimesFM teal (16% at night), land is card mixed 16% toward ink (20% at night), with card-coloured borders and no tile server or glow. Left panel: the sector list (Airlines pressed in selection sage with a Live tag; other sectors disabled with a dashed Offline tag) and a multi-select carrier list with deep-slate checkboxes, an Entire sector link and a Clear link. Right panel: layer switches (the night-mode switch style, link-teal track when on), grouped Airline operations / Natural hazards / Map. Flights, hubs, delays and airport weather start on; hazards and day/night start off.
+- Hubs are card-filled rings stroked by the map ramp (3px for hubs, 2.2px otherwise); airports of unselected carriers dim to 18%. With one carrier selected, great-circle routes from its first hub draw at 50%.
+- Flights are a tinted SDF airplane silhouette rotated to heading, coloured by the carrier's forecast volatility on the map ramp. Hovering a carrier in the list dims every other carrier's flights and airports to 12-14%.
+- An FAA programme adds a brick ring around the airport. Airport weather is a small offset dot: calm for VFR, stress for MVFR, crisis for IFR and LIFR; an ink outline means an NWS alert.
+- Hazards: earthquakes are hollow ink-2 rings sized by magnitude; storms are stress dots with a dashed stress track; wildfires are small crisis dots; other EONET events are ink-3 dots. Night is ink at 16% (black at 38% at night), recomputed every minute.
+- Beneath the map: a selected-carriers table (the comparison-table style) and a source list where each feed shows a Live tag with its age, a dashed "Last update failed" tag, or "Not run yet".
 
 ### Tooltip
 One shared tooltip: ink ground, stone text, 6px, 0.84rem, max 300px, with a bold head, key/value rows and a small note. Follows the pointer or focused element; in the dark theme it naturally inverts to a light card.

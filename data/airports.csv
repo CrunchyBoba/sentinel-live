@@ -1,0 +1,76 @@
+carrier,iata,icao,role,airport_name,city,country,lat,lon
+DAL,ATL,KATL,hub,Hartsfield/Jackson Atlanta International Airport,Atlanta,US,33.6367,-84.4279
+DAL,DTW,KDTW,hub,Detroit Metro Wayne County Airport,Detroit,US,42.2124,-83.3534
+DAL,MSP,KMSP,hub,Minneapolis-St Paul International/Wold-Chamberlain Airport,Minneapolis–St. Paul,US,44.882,-93.2218
+DAL,SLC,KSLC,hub,Salt Lake City International Airport,Salt Lake City,US,40.7884,-111.9778
+DAL,BOS,KBOS,focus,General Edward Lawrence Logan International Airport,Boston,US,42.3629,-71.0064
+DAL,LAX,KLAX,focus,Los Angeles International Airport,Los Angeles,US,33.9425,-118.408
+DAL,LGA,KLGA,focus,Laguardia Airport,New York–LaGuardia,US,40.7772,-73.8726
+DAL,JFK,KJFK,focus,John F Kennedy International Airport,New York–JFK,US,40.6399,-73.7787
+DAL,SEA,KSEA,focus,Seattle-Tacoma International Airport,Seattle,US,47.4499,-122.3118
+DAL,AMS,EHAM,gateway,Amsterdam Airport Schiphol,Amsterdam,NL,52.3086,4.7639
+DAL,LHR,EGLL,gateway,London Heathrow Airport,London–Heathrow,GB,51.4706,-0.4619
+DAL,CDG,LFPG,gateway,Charles de Gaulle International Airport,Paris–CDG,FR,49.0128,2.55
+DAL,MEX,MMMX,gateway,Licenciado Benito Juarez International Airport,Mexico City,MX,19.4363,-99.0721
+DAL,BOG,SKBO,gateway,El Dorado International Airport,Bogotá,CO,4.7016,-74.1469
+DAL,LIM,SPJC,gateway,Jorge Chavez International Airport,Lima,PE,-12.0219,-77.1143
+DAL,SCL,SCEL,gateway,Comodoro Arturo Merino Benitez International Airport,Santiago,CL,-33.393,-70.7858
+DAL,GRU,SBGR,gateway,Guarulhos - Governador Andre Franco Montoro International Airport,São Paulo,BR,-23.4356,-46.4731
+DAL,ICN,RKSI,gateway,Incheon International Airport,Seoul–Incheon,KR,37.4691,126.451
+DAL,HND,RJTT,gateway,Tokyo International Airport,Tokyo–Haneda,JP,35.5523,139.78
+AAL,DFW,KDFW,hub,Dallas-Fort Worth International Airport,Dallas/Fort Worth,US,32.8972,-97.0377
+AAL,CLT,KCLT,hub,Charlotte/Douglas International Airport,Charlotte,US,35.2132,-80.9514
+AAL,ORD,KORD,hub,Chicago O'Hare International Airport,Chicago–O’Hare,US,41.9769,-87.9082
+AAL,LAX,KLAX,hub,Los Angeles International Airport,Los Angeles,US,33.9425,-118.408
+AAL,MIA,KMIA,hub,Miami International Airport,Miami,US,25.7954,-80.2901
+AAL,JFK,KJFK,hub,John F Kennedy International Airport,New York–JFK,US,40.6399,-73.7787
+AAL,LGA,KLGA,hub,Laguardia Airport,New York–LaGuardia,US,40.7772,-73.8726
+AAL,PHL,KPHL,hub,Philadelphia International Airport,Philadelphia,US,39.8721,-75.2407
+AAL,PHX,KPHX,hub,Phoenix Sky Harbor International Airport,Phoenix,US,33.4343,-112.0116
+AAL,DCA,KDCA,hub,Ronald Reagan Washington Ntl Airport,Washington–National,US,38.8514,-77.0377
+AAL,LHR,EGLL,gateway,London Heathrow Airport,London–Heathrow,GB,51.4706,-0.4619
+AAL,MAD,LEMD,gateway,Madrid Barajas International Airport,Madrid,ES,40.4936,-3.5668
+AAL,HND,RJTT,gateway,Tokyo International Airport,Tokyo–Haneda,JP,35.5523,139.78
+UAL,ORD,KORD,hub,Chicago O'Hare International Airport,Chicago–O’Hare,US,41.9769,-87.9082
+UAL,DEN,KDEN,hub,Denver International Airport,Denver,US,39.8617,-104.6732
+UAL,IAH,KIAH,hub,George Bush Intcntl/Houston Airport,Houston–Intercontinental,US,29.9844,-95.3414
+UAL,EWR,KEWR,hub,Newark Liberty International Airport,Newark,US,40.6925,-74.1687
+UAL,SFO,KSFO,hub,San Francisco International Airport,San Francisco,US,37.6188,-122.3754
+UAL,IAD,KIAD,hub,Washington Dulles International Airport,Washington–Dulles,US,38.9475,-77.4599
+UAL,LAX,KLAX,hub,Los Angeles International Airport,Los Angeles,US,33.9425,-118.408
+UAL,GUM,PGUM,hub,Guam International Airport,Guam,GU,13.484,144.7971
+UAL,LHR,EGLL,gateway,London Heathrow Airport,London–Heathrow,GB,51.4706,-0.4619
+UAL,FRA,EDDF,gateway,Frankfurt am Main International Airport,Frankfurt,DE,50.0264,8.5431
+UAL,NRT,RJAA,gateway,Narita International Airport,Tokyo–Narita,JP,35.7647,140.386
+LUV,DAL,KDAL,focus,Dallas Love Field,Dallas Love Field,US,32.8459,-96.8509
+LUV,MDW,KMDW,focus,Chicago Midway International Airport,Chicago–Midway,US,41.7856,-87.7527
+LUV,DEN,KDEN,focus,Denver International Airport,Denver,US,39.8617,-104.6732
+LUV,LAS,KLAS,focus,Harry Reid International Airport,Las Vegas,US,36.0803,-115.1524
+LUV,BWI,KBWI,focus,Baltimore/Washington International Thurgood Marshall Airport,Baltimore,US,39.1757,-76.669
+LUV,PHX,KPHX,focus,Phoenix Sky Harbor International Airport,Phoenix,US,33.4343,-112.0116
+LUV,HOU,KHOU,focus,William P Hobby Airport,Houston–Hobby,US,29.6458,-95.2772
+LUV,OAK,KOAK,focus,Oakland San Francisco Bay Airport,Oakland,US,37.7213,-122.2212
+LUV,MCO,KMCO,focus,Orlando International Airport,Orlando,US,28.4294,-81.309
+LUV,AUS,KAUS,focus,Austin-Bergstrom International Airport,Austin,US,30.1945,-97.6699
+LUV,BNA,KBNA,focus,Nashville International Airport,Nashville,US,36.1245,-86.6782
+ALK,SEA,KSEA,hub,Seattle-Tacoma International Airport,Seattle,US,47.4499,-122.3118
+ALK,PDX,KPDX,hub,Portland International Airport,Portland,US,45.5887,-122.5969
+ALK,ANC,PANC,hub,Ted Stevens Anchorage International Airport,Anchorage,US,61.1741,-149.9981
+ALK,SFO,KSFO,hub,San Francisco International Airport,San Francisco,US,37.6188,-122.3754
+ALK,LAX,KLAX,hub,Los Angeles International Airport,Los Angeles,US,33.9425,-118.408
+ALK,HNL,PHNL,hub,Daniel K Inouye International Airport,Honolulu,US,21.3178,-157.9203
+ALK,SAN,KSAN,focus,San Diego International Airport,San Diego,US,32.7336,-117.1897
+JBLU,JFK,KJFK,focus,John F Kennedy International Airport,New York–JFK,US,40.6399,-73.7787
+JBLU,BOS,KBOS,focus,General Edward Lawrence Logan International Airport,Boston,US,42.3629,-71.0064
+JBLU,FLL,KFLL,focus,Fort Lauderdale/Hollywood International Airport,Fort Lauderdale,US,26.0717,-80.1497
+JBLU,MCO,KMCO,focus,Orlando International Airport,Orlando,US,28.4294,-81.309
+JBLU,SJU,TJSJ,focus,Luis Munoz Marin International Airport,San Juan,US,18.4394,-66.0021
+ULCC,DEN,KDEN,focus,Denver International Airport,Denver,US,39.8617,-104.6732
+ULCC,MCO,KMCO,focus,Orlando International Airport,Orlando,US,28.4294,-81.309
+ULCC,LAS,KLAS,focus,Harry Reid International Airport,Las Vegas,US,36.0803,-115.1524
+ULCC,PHL,KPHL,focus,Philadelphia International Airport,Philadelphia,US,39.8721,-75.2407
+ULCC,ATL,KATL,focus,Hartsfield/Jackson Atlanta International Airport,Atlanta,US,33.6367,-84.4279
+ALGT,LAS,KLAS,focus,Harry Reid International Airport,Las Vegas,US,36.0803,-115.1524
+ALGT,SFB,KSFB,focus,Orlando Sanford International Airport,Orlando–Sanford,US,28.7772,-81.2349
+ALGT,PIE,KPIE,focus,St Pete-Clearwater International Airport,St. Pete–Clearwater,US,27.9086,-82.6865
+ALGT,AZA,KIWA,focus,Mesa Gateway Airport,Phoenix–Mesa,US,33.3078,-111.6555

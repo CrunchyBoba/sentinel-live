@@ -27,11 +27,12 @@ Real models, honestly shown. The production models (EGARCH, TimesFM, HMM regimes
 
 ## Capabilities and Constraints
 
-- Static HTML/CSS/JS, no build step, served from GitHub Pages. Vendored so the site needs no CDN: Chart.js 4.4.1 (`chart.umd.js`), topojson-client 3.1.0 (`topojson-client.min.js`) and the Natural Earth 110m world outline (`world-110m.json`).
+- Static HTML/CSS/JS, no build step, served from GitHub Pages. Vendored so the site needs no CDN: Chart.js 4.4.1 (`chart.umd.js`), topojson-client 3.1.0 (`topojson-client.min.js`), MapLibre GL 5.24.0 (`maplibre-gl.js`/`.css`) and the Natural Earth 110m world outline (`world-110m.json`).
 - All model output is rendered from `sentinel_data.json`; charts and forecasts are snapshots from the last notebook run.
-- One exception to data-only-from-JSON: the Globe's hub locations (`HUBS` / `CARRIER_HUBS` in `app.js`) are reference geography, not model output. DAL and AAL hubs come from the company descriptions in the data file; the others from public network information. The page labels them as such. Changing a carrier's network means editing `app.js`.
+- The Globe is the one page with its own data. Hub and airport locations are reference geography in `data/airports.csv` (one row per carrier and airport, with coordinates), not model output; the page labels them as such. Live layers (flights, delays, airport weather, alerts, hazards, fuel) come from `globe_data.json`, which a scheduled GitHub Action (`.github/workflows/update-globe-data.yml` running `scripts/update_globe_data.py`) refreshes daily from free public sources. Only OpenSky uses a key, stored as repository secrets. Every source records whether its last update worked, and the page shows that; a failed source keeps its previous data and says so.
+- MapLibre GL 5.24.0 (`maplibre-gl.js`, `maplibre-gl.css`) is vendored for the 3D globe; land comes from `world-110m.json`, so the map needs no tile server.
 - Fuel / news / operations (the composite) are shown only when the export contains a live `composite` block. With none, every directional label is hidden and the UI says "Not live yet"; no example values are shown.
-- Intentional placeholders (must stay labelled as such): Portfolio "Your own holdings" form (disabled, "Not built yet"), and interactive versions of the six Lab study models (disabled, "Interactive version not built yet").
+- Intentional placeholders (must stay labelled as such): the Globe's other sectors (Banks, Energy, Shipping, Semiconductors, marked Offline), Portfolio "Your own holdings" form (disabled, "Not built yet"), and interactive versions of the six Lab study models (disabled, "Interactive version not built yet").
 
 ## Brand Commitments
 

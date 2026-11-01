@@ -18,6 +18,12 @@ GitHub Pages for free.
 | `styles.css` | All styling / theme | To restyle |
 | `app.js` | The whole app: router + all six tabs | To change behavior |
 | `chart.umd.js` | Chart.js 4.4.1 (bundled so the site needs no internet) | No |
+| `globe.js` | The Globe tab: 3D map, sector and carrier pickers, data layers | To change the Globe |
+| `maplibre-gl.js`, `maplibre-gl.css` | MapLibre GL 5.24.0, the 3D map engine (bundled) | No |
+| `data/airports.csv` | Each airline's hubs and airports with coordinates (open in Excel or Sheets) | To change a network |
+| `globe_data.json` | Live Globe layers: flights, delays, weather, hazards, fuel. **Written by the daily GitHub Action** | No |
+| `scripts/update_globe_data.py` | The script the Action runs to fetch the live layers | To add a source |
+| `.github/workflows/update-globe-data.yml` | The schedule (daily) for that script | To change how often |
 | `sentinel_data.json` | **Your data** — prices, forecasts, regimes, PCA | **Replace this to update the site** |
 | `.nojekyll` | Tells GitHub Pages to serve files as-is | No |
 | `README.md` | This file | — |
@@ -103,7 +109,6 @@ on the page). To show live numbers:
 
 These match where your backend is today — nothing here is broken:
 
-- **Globe tab** — empty on purpose; the geospatial backend isn't built yet.
 - **Portfolio → “Enter your own holdings”** — the form is visible but disabled
   (“Add · soon”), since custom-portfolio analysis isn't wired up. The **Model Airlines
   Portfolio** with equal/random weights, the PCA, correlation heatmap and regime chart
@@ -116,6 +121,27 @@ These match where your backend is today — nothing here is broken:
   They refresh only when you drop in a new `sentinel_data.json`.
 
 ---
+
+## The Globe tab and its daily update
+
+The Globe shows each airline's live flights, hubs and airports, FAA delays and ground stops, airport weather
+and alerts, natural hazards (earthquakes, hurricanes, wildfires, volcanoes, floods) and day/night shading.
+
+- **Hubs and airports** come from `data/airports.csv`, one row per airline and airport. Open it in Excel or
+  Google Sheets, add or remove rows (carrier, IATA and ICAO codes, role, name, city, country, lat, lon), save
+  as CSV and commit. The globe picks it up on the next page load.
+- **Everything live** comes from `globe_data.json`, written by the **Update globe data** GitHub Action:
+  - It runs **once a day** (12:17 UTC), whenever the script, the airports file or the workflow changes, and on
+    demand: repository → **Actions** → **Update globe data** → **Run workflow**.
+  - To run it more often, edit the `cron` line in `.github/workflows/update-globe-data.yml`
+    (for example `"17 */6 * * *"` is every 6 hours).
+  - It needs **Settings → Actions → General → Workflow permissions → Read and write** so it can commit the file.
+  - OpenSky flights use two repository secrets, `OPENSKY_CLIENT_ID` and `OPENSKY_CLIENT_SECRET`
+    (Settings → Secrets and variables → Actions). Every other source is free and keyless:
+    FAA NAS Status, aviationweather.gov, National Weather Service, USGS, NASA EONET, NOAA NHC, and the
+    FlightAware public board and Yahoo Finance (the same methods as the backend's `delays.py` and `fuel.py`).
+- If a source fails, the previous data is kept and the Globe's "Where this data comes from" list says so.
+- Flight positions are a **snapshot** from the last run, not a continuous live feed.
 
 ## Customizing
 
