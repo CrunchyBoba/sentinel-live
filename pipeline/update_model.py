@@ -69,6 +69,17 @@ def now_iso():
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def clean(x):
+    """Replace any non-finite number with null so the file is always valid JSON for browsers."""
+    if isinstance(x, float) and not math.isfinite(x):
+        return None
+    if isinstance(x, dict):
+        return {k: clean(v) for k, v in x.items()}
+    if isinstance(x, (list, tuple)):
+        return [clean(v) for v in x]
+    return x
+
+
 def rms(a) -> float:
     a = np.asarray(a, dtype=float)
     return float(np.sqrt(np.mean(a ** 2)))
@@ -97,6 +108,9 @@ def log_rows(made_on: str, paths: dict, source: str) -> list[dict]:
     for model, by_t in paths.items():
         for t, p in by_t.items():
             p = np.asarray(p, dtype=float)
+            if not np.isfinite(p).all():
+                print(f"skipping non-finite {model} forecast for {t} on {made_on}", file=sys.stderr)
+                continue
             rows.append({"made_on": made_on, "ticker": t, "model": model,
                          "d1_vol": round(float(p[0]), 4), "w1_vol": round(rms(p[:WEEK]), 4),
                          "m2_vol": round(rms(p[:M.HORIZON]), 4), "source": source, "logged_at": stamp})
@@ -131,6 +145,9 @@ def score(log: pd.DataFrame, returns: pd.DataFrame) -> dict:
     n = len(returns)
     recs = []
     for r in log.itertuples(index=False):
+        vals = [float(r.d1_vol), float(r.w1_vol), float(r.m2_vol)]
+        if not all(math.isfinite(v) and 0 < v < 1000 for v in vals):
+            continue                     # a broken forecast is never scored as if it were real
         i = idx.get(r.made_on)
         if i is None or r.ticker not in returns:
             continue
@@ -160,16 +177,16 @@ def score(log: pd.DataFrame, returns: pd.DataFrame) -> dict:
         if len(nd):
             hit = float(nd["inside"].astype(float).mean())
             calib = float(np.sqrt(np.nanmean(nd["z"].astype(float) ** 2)))
-            out["day"] = {"n": int(len(nd)), "inside": int(nd["inside"].astype(float).sum()), "hit": round(hit, 4),
-                          "calib": round(calib, 3), "verdict": verdict_band(hit, calib)}
+            out["day"] = {"n": int(len(nd)), "inside": int(nd["inside"].astype(float).sum()), "hit": num(hit, 4),
+                          "calib": num(calib, 3), "verdict": verdict_band(hit, calib)}
         for key in ("w1", "m2"):
             col = key + "_actual"
             if col in d:
                 dd = d.dropna(subset=[col])
                 if len(dd):
                     err = dd[key + "_vol"] - dd[col]
-                    out[key] = {"n": int(len(dd)), "mae": round(float(err.abs().mean()), 2),
-                                "bias": round(float(err.mean()), 2), "actual_mean": round(float(dd[col].mean()), 2),
+                    out[key] = {"n": int(len(dd)), "mae": num(err.abs().mean(), 2),
+                                "bias": num(err.mean(), 2), "actual_mean": num(dd[col].mean(), 2),
                                 "verdict": verdict_bias(float(err.mean()), float(dd[col].mean()))}
         return out
 
@@ -267,7 +284,9 @@ def main() -> int:
     paths, backups = M.forecast_all(returns, vol_df, sector_vol, tfm)
     if not already:
         append_log(log_rows(last, {m: p for m, p in paths.items() if p}, "live"))
-    status["egarch"] = {"ok": True, "at": now_iso(), "backup_used": backups}
+    status["egarch"] = {"ok": True, "at": now_iso(), "robust_variant": backups}
+    if backups:
+        print("EGARCH robust variant used today:", backups)
     log = read_log()
 
     # ---- regimes and PCA ----
@@ -344,7 +363,7 @@ def main() -> int:
     out["pipeline"] = {"models": status, "seconds": round(time.time() - t0)}
 
     with open(DATA_FILE, "w") as f:
-        json.dump(out, f, separators=(",", ":"), default=str)
+        json.dump(clean(out), f, separators=(",", ":"), default=str, allow_nan=False)
     print(f"wrote {DATA_FILE} ({os.path.getsize(DATA_FILE) / 1024:.0f} KB) in {time.time() - t0:.0f}s")
     return 0
 

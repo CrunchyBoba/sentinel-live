@@ -502,6 +502,11 @@ function renderStockDetail(view, sym) {
       <span><i class="sw dot" style="border-color:var(--s-tf2)"></i> TimesFM + sector ${pct(st.tfT)}</span>
       <span><i class="sw box" style="background:var(--s-band)"></i> Model range</span>
     </div>`;
+  const variant = DATA.pipeline && DATA.pipeline.models && DATA.pipeline.models.egarch && (DATA.pipeline.models.egarch.robust_variant || {})[sym];
+  if (variant) {
+    const why = { 'egarch-t': 'a Student-t EGARCH (heavier tails)', 'egarch-3y': 'EGARCH fitted on the last 3 years', 'egarch-t-3y': 'a Student-t EGARCH on the last 3 years', realized: 'recent realized volatility, held flat, because every EGARCH fit failed' }[variant] || variant;
+    vc.appendChild(el('p', { class: 'note', style: 'margin:.7rem 0 0' }, `Today the standard EGARCH fit was unstable on ${sym}'s price history, so the EGARCH line uses ${esc(why)}.`));
+  }
   view.appendChild(vc);
 
   // how good have these forecasts been?

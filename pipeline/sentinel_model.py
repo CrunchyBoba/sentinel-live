@@ -75,10 +75,10 @@ def get_regimes(hmm, order, sector_returns: pd.Series):
 
 
 # --------------------------------------------------------------------------- EGARCH
-def _egarch(r: pd.Series):
+def _egarch(r: pd.Series, dist: str = "normal"):
     from arch import arch_model
 
-    return arch_model(r, vol="EGARCH", p=1, o=1, q=1)
+    return arch_model(r, vol="EGARCH", p=1, o=1, q=1, dist=dist)
 
 
 def _arch_path(fitted, horizon: int) -> np.ndarray:
@@ -88,33 +88,70 @@ def _arch_path(fitted, horizon: int) -> np.ndarray:
 
 
 def _own_path(fitted, horizon: int) -> np.ndarray:
-    """Backup: simulate the fitted EGARCH equation directly."""
+    """Direct simulation of the fitted EGARCH equation (normal shocks)."""
     p = fitted.params
     omega, alpha, gamma, beta = p["omega"], p["alpha[1]"], p["gamma[1]"], p["beta[1]"]
     rng = np.random.default_rng(0)
     log_var = np.full(N_SIMS, np.log(fitted.conditional_volatility.iloc[-1] ** 2))
     z = np.full(N_SIMS, fitted.std_resid.iloc[-1])
     out = []
-    for _ in range(horizon):
-        log_var = omega + alpha * (np.abs(z) - np.sqrt(2 / np.pi)) + gamma * z + beta * log_var
-        out.append(np.exp(log_var).mean())
-        z = rng.standard_normal(N_SIMS)
+    with np.errstate(over="ignore", invalid="ignore"):
+        for _ in range(horizon):
+            log_var = omega + alpha * (np.abs(z) - np.sqrt(2 / np.pi)) + gamma * z + beta * log_var
+            out.append(np.exp(log_var).mean())
+            z = rng.standard_normal(N_SIMS)
     return np.array(out)
 
 
-def egarch_variance_path(r: pd.Series, horizon: int = HORIZON):
-    """Daily variance forecast (%^2) for the next `horizon` days, plus a flag if the backup was used.
+def _plausible(path, r: pd.Series) -> bool:
+    """A daily-variance path is plausible if it stays within a wide band around the stock's own history."""
+    path = np.asarray(path, dtype=float)
+    if path.size == 0 or not np.isfinite(path).all() or (path <= 0).any():
+        return False
+    sd = np.sqrt(path)
+    long_sd, recent_sd = float(r.std()), float(r.tail(60).std())
+    return sd.max() < 4 * max(long_sd, recent_sd) and sd.min() > min(long_sd, recent_sd) / 5
 
-    On some histories arch's multi-day simulation collapses to near zero although the fit is fine;
-    the first day is checked against the direct calculation and the backup is used if they disagree.
+
+def _fit_ok(fitted) -> bool:
+    p = fitted.params
+    return bool(np.isfinite(p.values).all()) and abs(float(p["beta[1]"])) < 0.999 and np.isfinite(fitted.conditional_volatility.iloc[-1])
+
+
+# Tried in order until one gives a stable fit and a plausible forecast. The first is the model;
+# the others exist because short, jumpy histories (ULCC trades at a few dollars) can make the
+# normal-shock fit diverge on some days.
+EGARCH_VARIANTS = [("egarch", "normal", None), ("egarch-t", "t", None), ("egarch-3y", "normal", 756), ("egarch-t-3y", "t", 756)]
+
+
+def egarch_variance_path(r: pd.Series, horizon: int = HORIZON):
+    """Daily variance forecast (%^2) for the next `horizon` days, and the variant used.
+
+    The variant is "egarch" normally; anything else means the standard fit was unstable on this
+    history and a more robust EGARCH was used ("realized" = every fit failed, so the forecast is
+    simply recent realized variance, held flat).
     """
-    fitted = _egarch(r.dropna()).fit(disp="off")
-    path = _arch_path(fitted, horizon)
-    backup = _own_path(fitted, horizon)
-    ratio = path[0] / backup[0] if backup[0] else np.nan
-    if not np.isfinite(path).all() or not np.isfinite(ratio) or ratio < 0.8 or ratio > 1.25:
-        return backup, True
-    return path, False
+    r = r.dropna()
+    for name, dist, last_n in EGARCH_VARIANTS:
+        rr = r.tail(last_n) if last_n else r
+        try:
+            fitted = _egarch(rr, dist).fit(disp="off", options={"maxiter": 500})
+        except Exception:
+            continue
+        if not _fit_ok(fitted):
+            continue
+        try:
+            path = _arch_path(fitted, horizon)
+        except Exception:
+            path = None
+        if dist == "normal":
+            own = _own_path(fitted, horizon)
+            if path is None or not _plausible(path, r) or not (0.8 < path[0] / own[0] < 1.25):
+                path = own
+        if path is not None and _plausible(path, r):
+            return np.asarray(path, dtype=float), name
+    var = float(r.tail(VOL_WINDOW).var())
+    return np.full(horizon, var), "realized"
 
 
 def ann_vol(var_path) -> np.ndarray:
@@ -180,15 +217,15 @@ def forecast_all(returns: pd.DataFrame, vol_df: pd.DataFrame, sector_vol: pd.Ser
                  tfm: TimesFM | None, horizon: int = HORIZON):
     """Every model's annualized-vol path for every airline, using all rows passed in.
 
-    Returns {model: {ticker: np.ndarray(horizon)}} and the list of tickers where the EGARCH backup ran.
+    Returns {model: {ticker: np.ndarray(horizon)}} and {ticker: variant} where a robust EGARCH variant was needed.
     """
     out = {k: {} for k in MODELS}
-    backups = []
+    backups = {}
     for t in TICKERS:
-        var, flagged = egarch_variance_path(returns[t], horizon)
+        var, variant = egarch_variance_path(returns[t], horizon)
         out["egarch"][t] = ann_vol(var)
-        if flagged:
-            backups.append(t)
+        if variant != "egarch":
+            backups[t] = variant
     if tfm is not None:
         alone, together = tfm.paths(vol_df, sector_vol, horizon)
         for j, t in enumerate(TICKERS):

@@ -366,6 +366,17 @@ SOURCES = [
 ]
 
 
+def _clean(x):
+    """Non-finite numbers become null so browsers can always parse the file."""
+    if isinstance(x, float) and not math.isfinite(x):
+        return None
+    if isinstance(x, dict):
+        return {k: _clean(v) for k, v in x.items()}
+    if isinstance(x, list):
+        return [_clean(v) for v in x]
+    return x
+
+
 def main() -> int:
     airports = load_airports()
     try:
@@ -394,7 +405,7 @@ def main() -> int:
     out["carriers"] = {t: {"name": n, "callsign": m, "regional": r} for t, (n, m, r) in CARRIERS.items()}
     out["sources"] = sources
     with open(OUT, "w", encoding="utf-8") as f:
-        json.dump(out, f, separators=(",", ":"))
+        json.dump(_clean(out), f, separators=(",", ":"), allow_nan=False)
     print(f"wrote {OUT} ({os.path.getsize(OUT) / 1024:.0f} KB), {ok_count}/{len(SOURCES)} sources ok")
     return 0
 
