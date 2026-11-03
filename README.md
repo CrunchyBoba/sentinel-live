@@ -1,6 +1,8 @@
-# Sentinel — Airline Volatility Research
+# Sentinel — Risk Intelligence
 
-A static website (GitHub Pages) that forecasts how volatile the eight big U.S. airline stocks will be over the
+Built on data. Tested against outcomes.
+
+A static website (GitHub Pages) that forecasts volatility for U.S. equities, beginning with the eight big airline stocks, over the
 next ~2 months, shows the airline sector on a live 3D globe, and keeps an honest **track record** of how good
 its forecasts have been. A GitHub Action updates everything automatically after every trading day.
 
@@ -102,6 +104,7 @@ To run the pipeline yourself: `pip install torch --index-url https://download.py
 - **Model settings** (horizon, simulations, windows): the constants at the top of `pipeline/sentinel_model.py`.
 - **Colours / fonts:** the tokens at the top of `assets/styles.css`; rules in `DESIGN.md`.
 - **Glossary terms:** the `GLOSSARY` array in `assets/app.js`.
+- **After changing anything in `assets/`:** update the `?v=` date on its links in `index.html`, so returning visitors get the new files straight away.
 
 ## Placeholders (labelled on the site)
 

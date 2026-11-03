@@ -1,6 +1,6 @@
 ---
 name: Sentinel
-description: Airline volatility research. How big the next move may be, not which way.
+description: Risk intelligence. Built on data. Tested against outcomes.
 colors:
   ground: "#0b0e12"
   pane: "#12161b"
@@ -292,7 +292,7 @@ Quiet pills; the only loud one points at the next step.
 - **Primary:** Signal Green fill with On Green text, weight 500, .92rem.
 - **Hover / Focus:** Primary lightens 14% toward white; secondary fills with Pane Raised. All controls take a 2px Link Green focus ring offset by 2px. State transitions run .2s on a soft expo-out curve.
 - **Secondary:** Transparent with a Hairline Strong border.
-- **Disabled:** Raised pane, dashed border, muted text, and always a label saying why, such as "Interactive version not built yet".
+- **Disabled:** Raised pane, dashed border, muted text, and always a label saying why, such as "Study module, not interactive yet".
 
 ### Chips and Tags
 - **Style:** Small transparent pills with a Hairline Strong border, in Switzer at .76rem.
@@ -359,7 +359,7 @@ A transparent panel with a dashed border, a heading, a dashed tag and a plain se
 - **Do** use amber and coral only when a risk or warning state is actually present.
 - **Do** separate series by solid, dashed and dotted line styles within the green family and neutrals.
 - **Do** label every placeholder in words and dash its border.
-- **Do** keep the "Not financial advice" disclaimer in the footer of every page.
+- **Do** keep the "Not financial advice" disclaimer visible: a bordered panel in the footer of every page, a short linked notice near the top of the Overview and stock pages, and a line in the full-screen Globe.
 - **Do** draw icons as authored inline SVG with round caps and stroke weights of 1.6 to 1.8.
 
 ### Don't:

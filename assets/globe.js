@@ -16,7 +16,7 @@ const SECTORS = [
 ];
 
 const LAYERS = [
-  { id: 'flights', group: 'Airline operations', name: 'Live flights', on: true, src: 'opensky' },
+  { id: 'flights', group: 'Airline operations', name: 'Flights at snapshot', on: true, src: 'opensky' },
   { id: 'airports', group: 'Airline operations', name: 'Hubs & airports', on: true, src: null },
   { id: 'delays', group: 'Airline operations', name: 'Delays & cancellations', on: true, src: 'faa' },
   { id: 'weather', group: 'Airline operations', name: 'Weather at airports', on: true, src: 'metar' },
@@ -163,9 +163,10 @@ async function loadGlobeData() {
 function renderGlobe(view) {
   view.appendChild(el('header', { class: 'pagehead' }, `
     <h1>Where each airline's <span>risk lands.</span></h1>
-    <p>A live picture of the airline sector: each carrier's flights in the air, its hubs and airports, delays and
+    <p>A daily snapshot of the airline sector: each carrier's flights in the air, its hubs and airports, delays and
     weather at those airports, and natural hazards nearby. Hubs and flights are coloured by the carrier's two-month
     volatility forecast.</p>`));
+  view.appendChild(el('h2', { class: 'sr' }, 'Sector map and data layers'));
 
   if (!GSTATE.sel) GSTATE.sel = new Set([DATA.tickers[0]]);
 
@@ -198,6 +199,7 @@ function renderGlobe(view) {
         <div class="hud-actions">
           <button type="button" class="hudbtn" data-reset>Reset view</button>
           <button type="button" class="hudbtn" data-panels>Hide panels</button>
+          <span class="hud-nfa">Not financial advice</span>
           <button type="button" class="hudbtn" data-exit>Exit <kbd>Esc</kbd></button>
         </div>
         <div class="hud hud-bottom" aria-hidden="true"><div id="hudPos"></div><span class="hud-sp"></span><div id="hudCounts"></div></div>
@@ -282,6 +284,7 @@ function renderGlobe(view) {
   });
 
   /* ---------- full-screen console ---------- */
+  let consoleOpener = null;
   function enterConsole() {
     if (wrap.classList.contains('console')) return;
     wrap.classList.add('console');
@@ -289,6 +292,7 @@ function renderGlobe(view) {
     if (wrap.requestFullscreen) wrap.requestFullscreen().catch(() => {});
     drawPanels(); drawLegend(); restartMap();
     clockTick = setInterval(hudClock, 1000); hudClock(); hudCounts();
+    consoleOpener = document.activeElement; const ex = $('[data-exit]', wrap); if (ex) ex.focus();
   }
   function exitConsole(silent) {
     if (!wrap.classList.contains('console')) return;
@@ -297,7 +301,7 @@ function renderGlobe(view) {
     document.documentElement.classList.remove('console-open');
     clearInterval(clockTick); clockTick = null;
     if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
-    if (!silent) { drawPanels(); drawLegend(); restartMap(); }
+    if (!silent) { drawPanels(); drawLegend(); restartMap(); if (consoleOpener && consoleOpener.isConnected) consoleOpener.focus(); }
   }
   const onFs = () => { if (!document.fullscreenElement && wrap.classList.contains('console')) exitConsole(); };
   const onEsc = (e) => { if (e.key === 'Escape' && wrap.classList.contains('console') && !document.fullscreenElement) exitConsole(); };

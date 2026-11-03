@@ -33,7 +33,7 @@ Real models, honestly shown. The production models (EGARCH, TimesFM, HMM regimes
 - The 3D globe needs no tile server: land comes from `data/world-110m.json`. It has a full-screen console view.
 - Track record: every forecast is appended to `data/forecast_log.csv` before its outcome exists and never edited. Stock pages score each model at three horizons (next-day 95% range, 1 week, 2 months). About six months before the first live run are reconstructed walk-forward and labelled "Reconstructed"; later rows are "Live". Misses are shown as plainly as hits.
 - Fuel / news / operations (the composite) are shown only when the daily data contains a live `composite` block. With none, every directional label is hidden and the UI says "Not live yet"; no example values are shown.
-- Intentional placeholders (must stay labelled as such): the Globe's other sectors (Banks, Energy, Shipping, Semiconductors, marked Offline), Portfolio "Your own holdings" form (disabled, "Not built yet"), and interactive versions of the six Lab study models (disabled, "Interactive version not built yet").
+- Intentional placeholders (must stay labelled as such): the Globe's other sectors (Banks, Energy, Shipping, Semiconductors, marked Offline), Portfolio "Your own holdings" form (disabled, "Not built yet"), and the six Lab study models (tagged "Study module, not interactive yet").
 
 ## Brand Commitments
 
