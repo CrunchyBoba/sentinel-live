@@ -176,7 +176,7 @@ const tipRows = (rows) => rows.map(([k, v]) => `<span class="t-r"><span>${k}</sp
 function setTheme(theme, rerender) {
   document.documentElement.dataset.theme = theme;
   $('#themeSwitch').setAttribute('aria-checked', theme === 'dark' ? 'true' : 'false');
-  try { localStorage.setItem('sentinel-theme', theme); } catch (e) {}
+  try { localStorage.setItem('sentinel-theme-v2', theme); } catch (e) {}
   if (rerender && DATA) { const y = scrollY; router(true); scrollTo(0, y); }
 }
 

@@ -7,7 +7,8 @@
   <title>Sentinel — Risk Intelligence</title>
   <meta name="description" content="Sentinel: risk intelligence built on data and tested against outcomes. Volatility forecasts for U.S. equities, beginning with the eight major airlines, re-run daily and scored in public." />
   <script>
-    try { if (localStorage.getItem('sentinel-theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}
+    /* Night mode is the default. Only a choice made on this design switches it; older saved preferences are ignored. */
+    try { if (localStorage.getItem('sentinel-theme-v2') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}
   </script>
   <link rel="preconnect" href="https://api.fontshare.com">
   <link href="https://api.fontshare.com/v2/css?f[]=switzer@400,500,600&display=swap" rel="stylesheet">
@@ -15,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="vendor/maplibre-gl.css" />
-  <link rel="stylesheet" href="assets/styles.css?v=2026-11-03c" />
+  <link rel="stylesheet" href="assets/styles.css?v=2026-11-03d" />
 </head>
 <body>
   <a class="skip" href="#view">Skip to content</a>
@@ -58,7 +59,7 @@
         <div class="side-regime" id="sideRegime" hidden></div>
 
         <div class="side-foot">
-          <button class="theme-switch" id="themeSwitch" role="switch" aria-checked="true" aria-label="Dark mode">
+          <button class="theme-switch" id="themeSwitch" role="switch" aria-checked="true" aria-label="Night mode" title="Night mode">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>
             <span>Night mode</span>
             <i class="switch-track" aria-hidden="true"><i class="switch-thumb"></i></i>
@@ -91,7 +92,7 @@
   <script src="vendor/chart.umd.js"></script>
   <script src="vendor/topojson-client.min.js"></script>
   <script src="vendor/maplibre-gl.js"></script>
-  <script src="assets/globe.js?v=2026-11-03c"></script>
-  <script src="assets/app.js?v=2026-11-03c"></script>
+  <script src="assets/globe.js?v=2026-11-03d"></script>
+  <script src="assets/app.js?v=2026-11-03d"></script>
 </body>
 </html>
