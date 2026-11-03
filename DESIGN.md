@@ -1,388 +1,377 @@
 ---
 name: Sentinel
-description: Airline volatility research. Risk size, not direction, read at a glance.
+description: Airline volatility research. How big the next move may be, not which way.
 colors:
-  stone-ground: "#f4f5f2"
-  sidebar-stone: "#eceee9"
-  card-white: "#ffffff"
-  card-recess: "#f8f9f6"
-  hairline: "#d9ddd6"
-  hairline-strong: "#c3c9c0"
-  ink: "#17262b"
-  ink-secondary: "#46555b"
-  ink-muted: "#5d6c71"
-  selection-sage: "#dce6e2"
-  deep-slate-teal: "#12343b"
-  deep-slate-teal-2: "#1a434b"
-  on-deep: "#eef3f1"
-  on-deep-secondary: "#bcd0cc"
-  brass: "#b8893a"
-  brass-ink: "#7a5719"
-  brass-on-deep: "#dcb76d"
-  link-teal: "#1b5a61"
-  track: "#e7eae4"
-  series-realized: "#6c7b80"
-  series-egarch: "#b8893a"
-  series-timesfm: "#1d6f73"
-  series-timesfm-sector: "#5aa596"
-  series-volume: "#c9d0c8"
-  series-ma200: "#7d8e93"
-  regime-calm: "#5b8a68"
-  regime-stress: "#c08a2c"
-  regime-crisis: "#b04a3c"
-  ramp-low: "#eef3f1"
-  ramp-high: "#12343b"
-  night-ground: "#0e1a1d"
-  night-sidebar: "#112024"
-  night-card: "#15262a"
-  night-card-recess: "#192c30"
-  night-hairline: "#26393e"
-  night-ink: "#e6ece9"
-  night-ink-secondary: "#b6c3c3"
-  night-ink-muted: "#95a5a6"
-  night-deep: "#0f363c"
-  night-brass: "#d4ad62"
-  night-link-mint: "#8fd0c4"
-  night-series-timesfm: "#7cc3b8"
-  night-regime-calm: "#7fb08b"
-  night-regime-stress: "#d9a64a"
-  night-regime-crisis: "#df7766"
-  night-ramp-low: "#182b2f"
-  night-ramp-high: "#9ad8cc"
+  ground: "#0b0e12"
+  pane: "#12161b"
+  pane-raised: "#181d23"
+  hairline: "#242a31"
+  hairline-strong: "#363d46"
+  ink: "#eceef0"
+  ink-secondary: "#aab0b7"
+  ink-muted: "#848b93"
+  selection-green: "#14332a"
+  track: "#232930"
+  tooltip-ground: "#20262d"
+  signal-green: "#4fd1a1"
+  on-green: "#06140f"
+  link-green: "#6edcb3"
+  amber-stress: "#e8b04a"
+  coral-crisis: "#f0705f"
+  series-realized: "#cfd3d7"
+  series-timesfm: "#a4e9cd"
+  series-timesfm-sector: "#2f9f78"
+  series-volume: "#2a3037"
+  series-ma200: "#6b727a"
+  series-band: "rgba(79, 209, 161, .12)"
+  ramp-low: "#141a1f"
+  ground-light: "#f2f4f4"
+  pane-light: "#ffffff"
+  pane-raised-light: "#f7f8f8"
+  hairline-light: "#dde0e3"
+  hairline-strong-light: "#c5cacf"
+  ink-light: "#12161b"
+  ink-secondary-light: "#464d55"
+  ink-muted-light: "#5f666e"
+  selection-green-light: "#d6f2e6"
+  track-light: "#e6e9eb"
+  signal-green-light: "#0d7f59"
+  link-green-light: "#0b6f4e"
+  amber-stress-light: "#8a5d0c"
+  coral-crisis-light: "#c8483a"
+  series-timesfm-light: "#39a982"
+  series-timesfm-sector-light: "#0a5a40"
+  series-volume-light: "#d3d7db"
+  series-ma200-light: "#979da4"
+  series-band-light: "rgba(13, 127, 89, .1)"
+  ramp-low-light: "#e9f3ef"
 typography:
   display:
-    fontFamily: "Libre Caslon Display, Iowan Old Style, Georgia, serif"
-    fontSize: "clamp(2.1rem, 3.6vw, 3rem)"
-    fontWeight: 400
-    lineHeight: 1.12
-    letterSpacing: "-0.005em"
-  headline:
-    fontFamily: "Libre Caslon Display, Iowan Old Style, Georgia, serif"
-    fontSize: "clamp(2rem, 3.4vw, 2.85rem)"
-    fontWeight: 400
-    lineHeight: 1.12
-    letterSpacing: "-0.005em"
-  title:
-    fontFamily: "Libre Caslon Display, Iowan Old Style, Georgia, serif"
-    fontSize: "clamp(1.45rem, 2.4vw, 1.85rem)"
-    fontWeight: 400
-    lineHeight: 1.12
-    letterSpacing: "-0.005em"
-  figure:
-    fontFamily: "Libre Caslon Display, Iowan Old Style, Georgia, serif"
-    fontSize: "clamp(3rem, 6vw, 4.2rem)"
-    fontWeight: 400
+    fontFamily: "Switzer, -apple-system, 'Helvetica Neue', Arial, sans-serif"
+    fontSize: "clamp(3rem, 6.8vw, 6rem)"
+    fontWeight: 500
+    lineHeight: 0.98
+    letterSpacing: "-0.04em"
+  page-title:
+    fontFamily: "Switzer, -apple-system, 'Helvetica Neue', Arial, sans-serif"
+    fontSize: "clamp(2.6rem, 5.2vw, 4.6rem)"
+    fontWeight: 500
     lineHeight: 1
-  subtitle:
-    fontFamily: "Public Sans, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
-    fontSize: "1.08rem"
-    fontWeight: 600
+    letterSpacing: "-0.038em"
+  statement:
+    fontFamily: "Switzer, -apple-system, 'Helvetica Neue', Arial, sans-serif"
+    fontSize: "clamp(1.7rem, 3.2vw, 2.7rem)"
+    fontWeight: 500
+    lineHeight: 1.14
+    letterSpacing: "-0.028em"
+  headline:
+    fontFamily: "Switzer, -apple-system, 'Helvetica Neue', Arial, sans-serif"
+    fontSize: "clamp(1.7rem, 2.8vw, 2.4rem)"
+    fontWeight: 500
+    lineHeight: 1.05
+    letterSpacing: "-0.028em"
+  title:
+    fontFamily: "Switzer, -apple-system, 'Helvetica Neue', Arial, sans-serif"
+    fontSize: "1.1rem"
+    fontWeight: 500
     lineHeight: 1.3
+    letterSpacing: "-0.008em"
   body:
-    fontFamily: "Public Sans, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
+    fontFamily: "Switzer, -apple-system, 'Helvetica Neue', Arial, sans-serif"
     fontSize: "16px"
     fontWeight: 400
-    lineHeight: 1.6
+    lineHeight: 1.55
+    fontFeature: "'tnum' 1"
+  figure-hero:
+    fontFamily: "Switzer, -apple-system, 'Helvetica Neue', Arial, sans-serif"
+    fontSize: "clamp(3.6rem, 7vw, 5.6rem)"
+    fontWeight: 500
+    lineHeight: 1
+    letterSpacing: "-0.05em"
+    fontFeature: "'tnum' 1"
+  figure:
+    fontFamily: "Switzer, -apple-system, 'Helvetica Neue', Arial, sans-serif"
+    fontSize: "1.5rem"
+    fontWeight: 500
+    lineHeight: 1.1
+    letterSpacing: "-0.03em"
     fontFeature: "'tnum' 1"
   label:
-    fontFamily: "Public Sans, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
-    fontSize: "0.8rem"
-    fontWeight: 600
-    lineHeight: 1.3
-    fontFeature: "'tnum' 1"
-  code:
-    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace"
-    fontSize: "0.9em"
+    fontFamily: "Switzer, -apple-system, 'Helvetica Neue', Arial, sans-serif"
+    fontSize: "0.84rem"
     fontWeight: 400
+    lineHeight: 1.55
+  mono-data:
+    fontFamily: "'DM Mono', ui-monospace, Menlo, monospace"
+    fontSize: "0.84rem"
+    fontWeight: 400
+    lineHeight: 1.65
 rounded:
-  xs: "4px"
-  sm: "6px"
-  md: "10px"
+  mark: "4px"
+  cell: "8px"
+  sm: "10px"
+  md: "16px"
+  lg: "20px"
   pill: "999px"
 spacing:
-  gutter: "1.1rem"
-  card-y: "1.25rem"
-  card-x: "1.35rem"
-  section: "3.2rem"
-  page-x: "clamp(1rem, 3.5vw, 2.4rem)"
+  gap: "1.1rem"
+  pane-y: "1.15rem"
+  pane-x: "1.25rem"
+  gutter: "clamp(1.2rem, 3.4vw, 3rem)"
+  section: "4.5rem"
+  statement: "5.5rem"
 components:
   button-primary:
-    backgroundColor: "{colors.brass}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.sm}"
-    padding: "0.7rem 1.05rem"
+    backgroundColor: "{colors.signal-green}"
+    textColor: "{colors.on-green}"
+    rounded: "{rounded.pill}"
+    padding: ".72rem 1.15rem"
   button-secondary:
-    backgroundColor: "{colors.card-white}"
+    backgroundColor: "transparent"
     textColor: "{colors.ink}"
-    rounded: "{rounded.sm}"
-    padding: "0.7rem 1.05rem"
-  button-ghost-deep:
-    backgroundColor: "{colors.deep-slate-teal}"
-    textColor: "{colors.on-deep}"
-    rounded: "{rounded.sm}"
-    padding: "0.7rem 1.05rem"
-  button-disabled:
-    backgroundColor: "{colors.card-recess}"
-    textColor: "{colors.ink-muted}"
-    rounded: "{rounded.sm}"
-    padding: "0.7rem 1.05rem"
-  segmented-active:
-    backgroundColor: "{colors.deep-slate-teal}"
-    textColor: "{colors.on-deep}"
-    padding: "0.55rem 0.9rem"
-  feature-panel:
-    backgroundColor: "{colors.deep-slate-teal}"
-    textColor: "{colors.on-deep}"
-    rounded: "{rounded.md}"
-    padding: "clamp(1.4rem, 2.6vw, 2.1rem)"
-  card:
-    backgroundColor: "{colors.card-white}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.md}"
-    padding: "1.25rem 1.35rem"
-  notlive-panel:
-    backgroundColor: "{colors.card-recess}"
+    rounded: "{rounded.pill}"
+    padding: ".72rem 1.15rem"
+  button-secondary-hover:
+    backgroundColor: "{colors.pane-raised}"
+  nav-link:
     textColor: "{colors.ink-secondary}"
-    rounded: "{rounded.md}"
-    padding: "1.1rem 1.25rem"
+    rounded: "{rounded.pill}"
+    padding: ".42rem .78rem"
+  nav-link-active:
+    backgroundColor: "{colors.pane-raised}"
+    textColor: "{colors.ink}"
+  segmented:
+    backgroundColor: "{colors.pane-raised}"
+    textColor: "{colors.ink-secondary}"
+    rounded: "{rounded.pill}"
+    padding: "3px"
+  segmented-selected:
+    backgroundColor: "{colors.hairline-strong}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.pill}"
+    padding: ".36rem .85rem"
   tag:
-    backgroundColor: "{colors.card-white}"
+    backgroundColor: "transparent"
     textColor: "{colors.ink-secondary}"
     rounded: "{rounded.pill}"
-    padding: "0.12rem 0.5rem"
-  chip:
-    backgroundColor: "{colors.card-recess}"
-    textColor: "{colors.ink-secondary}"
-    rounded: "{rounded.pill}"
-    padding: "0.25rem 0.7rem"
+    padding: ".12rem .5rem"
   input:
-    backgroundColor: "{colors.card-white}"
+    backgroundColor: "{colors.pane}"
     textColor: "{colors.ink}"
     rounded: "{rounded.sm}"
-    padding: "0.6rem 0.75rem"
-  nav-item:
-    textColor: "{colors.ink-secondary}"
-    rounded: "{rounded.sm}"
-    padding: "0.55rem 0.7rem"
-  nav-item-active:
-    backgroundColor: "{colors.selection-sage}"
+    padding: ".6rem .75rem"
+  pane:
+    backgroundColor: "{colors.pane}"
     textColor: "{colors.ink}"
-    rounded: "{rounded.sm}"
-    padding: "0.55rem 0.7rem"
-  chart-readout:
-    backgroundColor: "{colors.card-recess}"
-    textColor: "{colors.ink-secondary}"
-    rounded: "{rounded.sm}"
-    padding: "0.55rem 0.8rem"
+    rounded: "{rounded.md}"
+    padding: "1.15rem 1.25rem"
+  figure-panel:
+    backgroundColor: "{colors.pane}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.lg}"
+    padding: "1rem 1.2rem .8rem"
   tooltip:
-    backgroundColor: "{colors.ink}"
-    textColor: "{colors.stone-ground}"
+    backgroundColor: "{colors.tooltip-ground}"
+    textColor: "{colors.ink}"
     rounded: "{rounded.sm}"
-    padding: "0.65rem 0.8rem"
+    padding: ".65rem .8rem"
 ---
 
 # Design System: Sentinel
 
 ## Overview
 
-**Creative North Star: "The Research Desk"**
+**Creative North Star: "The Open Instrument"**
 
-Sentinel reads like a quiet economics research publication, not a trading terminal. A pale stone ground carries white cards on hairlines; one deep slate-teal panel per page holds the answer; brass is the single warm accent, used for the model range and the one primary action. Headings and the figures that matter are set in Libre Caslon Display, a calm high-contrast serif; everything else is Public Sans with tabular figures so columns of percentages line up.
+Sentinel looks like a precise instrument with its cover off. The page opens with one big plain statement, then one signature data graphic, then small pieces of the real product: a ladder, a score table, a console showing the raw data file. Each piece is live model output, so the page's evidence and its decoration are the same thing. Rounded corners and a soft blue-grey ground keep the precision approachable for retail investors who have no terminal and no quant background.
 
-The thesis is risk size, not direction. Every visual device serves "how volatile does this carrier look over the horizon, and why", and the system deliberately has no visual vocabulary for bullish/bearish calls: there are no green-up/red-down headline badges, and directional composite signals are hidden entirely unless the data export contains them. The world replaced an earlier dark neon quant dashboard of tiles and glows; that look is the confirmed anti-reference.
+The structural idea of big statement, signature graphic and product fragments softened by rounding draws inspiration from oxide.computer. That is a note of lineage only; Sentinel's identity is the volatility character field and its own palette.
 
-Density is that of an operating dashboard with reading pauses: a fixed sidebar, a breadcrumb bar, a page-leading feature panel, then evidence (ladders, tables, charts) in sections spaced well apart. Light is the default; night mode is a full token swap, not an inversion filter.
+Density is moderate and earned: large type and generous gaps between sections, tight tabular data inside panes. Dark is the default and light is an equal theme, not an afterthought. The honesty line is a visual element: live output and placeholders must be distinguishable at a glance.
 
 **Key Characteristics:**
-- Pale stone ground, white hairline cards, one deep slate-teal feature panel per page.
-- Brass as the sole warm accent: model range bars, primary button, selection, emphasis inside the deep panel.
-- Libre Caslon Display for headings and headline figures; Public Sans with tabular figures for everything else.
-- The risk ladder (eight carriers on one shared volatility scale) is the signature, reused wherever carriers are compared.
-- Regime colours (sage calm, ochre stress, brick crisis) are semantic only.
-- Placeholders are visibly dashed; nothing not-yet-live is dressed as live.
-- Light default, night mode via a persisted sidebar switch.
+- One blue-grey neutral family and one signature green; amber and coral appear only for risk states.
+- Two-tone headlines: the first clause in ink, the second in grey.
+- One signature figure on one timeline, available as characters or ridge lines.
+- Small fragments of real product UI in rounded panes with hairline borders.
+- Switzer for all language and figures, DM Mono for machine text.
+- Charts appear in their final state, with no entrance animation.
 
 ## Colors
 
-A restrained slate-teal and brass palette on stone neutrals, with a semantic regime triad and a dedicated data-series set. All colours are custom properties on `:root`; night mode redefines the same names under `:root[data-theme="dark"]`, and charts read them at draw time through `getComputedStyle`, so a theme switch re-renders the route rather than carrying a second palette in script.
+A cool blue-grey neutral family carries the whole interface; a single green is the only colour that speaks without warning. Values come in matched pairs: unsuffixed tokens are the dark default, and the `-light` tokens are the light theme.
 
 ### Primary
-- **Deep Slate-Teal** (deep-slate-teal; night: night-deep): the feature panel ground and the active segmented-control segment. It is the page's one heavy mass and carries the answer (Overview head, a stock's risk read). Its companions are On-Deep text, On-Deep Secondary for paragraphs, and Brass-On-Deep for emphasis.
-- **Link Teal** (link-teal; night: night-link-mint): links, focus outline, active nav icon, the night-mode switch track when on, the brand mark.
+- **Signal Green** (#4fd1a1 dark, #0d7f59 light): The EGARCH series, calm regime, primary buttons, brand mark, selection, hatched bars, live dots and the low-to-mid range of the character figure.
+- **Link Green** (#6edcb3 dark, #0b6f4e light): Text links and the focus ring, tuned for legibility on the ground. Links carry a soft underline that firms on hover.
+- **Selection Green** (#14332a dark, #d6f2e6 light): The current carrier in the stock switcher and selected rows in the Globe lists.
 
-### Secondary
-- **Brass** (brass; night: night-brass): the primary button, the risk-ladder range bar (at 45% mix), the EGARCH series and its model band (`rgba(184,137,58,.16)`), text selection, the glossary term flash. Text on brass is always ink `#17262b` in both themes.
-- **Brass Ink** (brass-ink): brass at text contrast on light ground; used for the "Not financial advice" heading.
-- **Brass On Deep** (brass-on-deep): `em` emphasis, figures and fact-list icons inside the deep panel.
+### Risk states
+- **Amber Stress** (#e8b04a dark, #8a5d0c light): The stressed regime, a model missing its target, marginal or storm conditions on the Globe, and the hot end of the character figure and volatility ramps.
+- **Coral Crisis** (#f0705f dark, #c8483a light): The crisis regime, moves outside the forecast range, delays and wildfires.
 
-### Tertiary (data and state)
-- **Regime Calm / Stress / Crisis** (regime-calm, regime-stress, regime-crisis; night variants lifted for contrast): regime pills, chips, the sidebar regime strip, price-chart background bands (12% alpha), the as-of chip dot, and readout gains/losses. In the Stocks table, "up" volatility change reads crisis and "down" reads calm: colour describes risk, never price direction.
-- **Series** (series-realized slate, series-egarch brass, series-timesfm teal, series-timesfm-sector light teal, series-volume pale, series-ma200 grey; MA50 reuses brass): fixed per model across every chart and key.
-- **Sequential ramp** (ramp-low to ramp-high; night: night-ramp-low to night-ramp-high): the correlation heatmap interpolates between these two tokens in script; the legend bar is the same gradient.
-- **Map ramp**: the Globe colours hubs and arcs by forecast volatility, teal (series-timesfm) to brass to brick (regime-crisis), computed from tokens, so it follows the theme.
+### Series
+- **Realized Grey** (#cfd3d7 dark, #464d55 light): Realized volatility and the 50-day average, always solid.
+- **TimesFM Pale Green** (#a4e9cd dark, #39a982 light): TimesFM forecast and closing price.
+- **Sector Deep Green** (#2f9f78 dark, #0a5a40 light): TimesFM with the sector, dotted, and the leading PCA bar.
+- **Quiet Greys** (volume #2a3037 / #d3d7db, 200-day average #6b727a / #979da4): Context that must recede.
+- **Forecast Band** (green at 12% dark, 10% light): Model range and the area under mini charts.
 
 ### Neutral
-- **Stone Ground** (stone-ground; night: night-ground): page background.
-- **Sidebar Stone** (sidebar-stone; night: night-sidebar): the sidebar, one step darker than the ground.
-- **Card White / Card Recess** (card-white, card-recess; night: night-card, night-card-recess): cards and tables; the recess tone is for table heads, row hover, readouts, placeholders and the map well.
-- **Hairline / Hairline Strong** (hairline, hairline-strong; night: night-hairline): all borders and dividers; strong for control borders and the disclaimer.
-- **Ink / Ink Secondary / Ink Muted** (ink, ink-secondary, ink-muted; night variants): headings and figures, paragraphs, captions and axis labels.
-- **Selection Sage** (selection-sage): active nav item, selected carrier in the Globe list.
-- **Track** (track): ladder and regime-strip track, inline code ground.
+- **Ground** (#0b0e12 dark, #f2f4f4 light): Page background and the translucent top bar.
+- **Pane** and **Pane Raised** (#12161b and #181d23 dark, #ffffff and #f7f8f8 light): Cards, then readouts, hover rows and active nav.
+- **Hairline** and **Hairline Strong** (#242a31 and #363d46 dark, #dde0e3 and #c5cacf light): Pane borders and dividers, then control borders.
+- **Ink**, **Ink Secondary**, **Ink Muted** (#eceef0, #aab0b7, #848b93 dark; #12161b, #464d55, #5f666e light): Headlines and figures, body copy, then labels and the grey second clause of headlines.
+- **Track** (#232930 dark, #e6e9eb light): Ladder rails and empty bar channels.
 
 ### Named Rules
-**The One Deep Panel Rule.** Deep slate-teal is a feature panel that leads an answer page with its answer. At most one per page; it is never a card style or a decorative band.
+**The One Signal Rule.** Green is the only colour with no warning attached. Never add a second brand accent.
 
-**The Brass Is The Range Rule.** Brass means "the model range" in data and "the one primary action" in UI. Don't spend it on decoration, headings or borders.
+**The Risk-Only Rule.** Amber and coral appear only when they report a risk or warning state. If nothing is at risk, neither colour is on screen.
 
-**The Colour Means Risk Rule.** Sage, ochre and brick describe regime and volatility. They are never used to say buy or sell, and price direction is not colour-coded as good or bad.
+**The Line-Style Rule.** Series stay in the green family and the neutrals, and are told apart by line style: solid, dashed, dotted. Do not separate series by introducing a new hue.
 
 ## Typography
 
-**Display Font:** Libre Caslon Display (with Iowan Old Style, Georgia, serif)
-**Body Font:** Public Sans (with -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif)
-**Label/Mono Font:** Public Sans for labels; `ui-monospace` only for inline code.
+**Display Font:** Switzer, from Fontshare (with -apple-system, Helvetica Neue, Arial)
+**Body Font:** Switzer, from Fontshare (same stack)
+**Label/Mono Font:** DM Mono, from Google Fonts (with ui-monospace, Menlo)
 
-Both faces load from Google Fonts (Libre Caslon Display 400; Public Sans 400/500/600/700).
-
-**Character:** A calm, literary display serif sets the headline and the number that answers the question; a plain civic sans does all the work, with tabular figures (`font-feature-settings: 'tnum' 1` on body) so every percentage aligns.
+**Character:** Switzer is a neutral grotesque set large and tight, so headlines feel engineered rather than editorial. Tabular numerals let figures align and read as measurements. DM Mono marks text that belongs to the machine.
 
 ### Hierarchy
-- **Display** (400, clamp(2.1rem, 3.6vw, 3rem), 1.12): the Overview feature headline only.
-- **Headline** (400, clamp(2rem, 3.4vw, 2.85rem), 1.12): page h1.
-- **Title** (400, clamp(1.45rem, 2.4vw, 1.85rem), 1.12): section h2; fixed 1.45rem inside the ladder head and risk read.
-- **Figure** (400, clamp(3rem, 6vw, 4.2rem), 1): the risk-read headline volatility. The same face at 1.3 to 2rem sets ladder percentages, portfolio stats, Globe detail numbers, the alt-model grid, the Overview regime reading, the sidebar regime reading and the brand name. Units and captions beside a figure drop back to Public Sans.
-- **Subtitle** (Public Sans 600, 1.08rem, 1.3): h3 card and chart titles; h4 at 1rem.
-- **Body** (Public Sans 400, 16px, 1.6): paragraphs capped at 72ch, ink-secondary.
-- **Label** (Public Sans 600, 0.8rem): table column heads, tags, keys. Sentence case, no tracking, never uppercase.
+- **Display** (500, clamp 3 to 6rem, 0.98): The Overview headline only.
+- **Page Title** (500, clamp 2.6 to 4.6rem, 1): The headline of every other page.
+- **Statement** (500, clamp 1.7 to 2.7rem, 1.14, 30ch): The muted full-sentence claim on Overview, with its conclusion in ink.
+- **Headline** (500, clamp 1.7 to 2.4rem, 1.05): Section headings.
+- **Title** (500, 1.1rem, 1.3): Pane and chart titles.
+- **Body** (400, 16px, 1.55, 72ch): Explanatory copy in Ink Secondary. Page intros run 1.02rem at 60ch or less.
+- **Figure** (500, 1.5rem, -0.03em) and **Figure Hero** (500, clamp 3.6 to 5.6rem, -0.05em): Status rail values and the stock page's lead forecast, in Switzer with tabular numerals.
+- **Label** (400, 0.84rem): Stat labels and captions in sentence case, never uppercase.
+- **Mono Data** (DM Mono 400, 0.84rem, 1.65): Tickers, code and console blocks, chart axes and the character figure.
 
 ### Named Rules
-**The Serif Answers Rule.** Caslon is for headings and the figures that answer the page's question. Controls, tables, axes, labels and running text are Public Sans.
+**The Two-Tone Rule.** Every page headline has two clauses: ink first, Ink Muted second. The second clause does the explaining.
 
-**The Tabular Figures Rule.** Every number is set with tabular figures; never turn `tnum` off for a numeric column.
+**The Machine Text Rule.** DM Mono is for tickers, code and console blocks, chart axes and the character figure only. Language and figures are always Switzer with tabular numerals.
 
 ## Layout
 
-An Operate shell: a 248px sticky sidebar (brand, six routes with counts, the regime card, the night-mode switch and data meta pinned at the bottom) beside a main column. The main column opens with a one-line breadcrumb bar and an as-of chip, then the view, capped at 1160px plus page padding (`clamp(1rem, 3.5vw, 2.4rem)` horizontal).
+A sticky top bar replaces any sidebar: brand, pill navigation, data date, regime pill and theme switch, over a translucent blurred ground. Content sits in one centred column up to 1320px plus side gutters, and the gutters flex with the viewport.
 
-Pages lead with a two-column 5fr/7fr split: the deep feature panel on the left and evidence on the right (the Overview ladder; the risk-read figure beside its words). Sections are separated by 3.2rem; cards and grid gaps use 1.1rem. Lists of explanations are ruled rows with hairline dividers (read-lists, model tables, lab list, glossary terms) rather than grids of identical cards. Charts sit in cards at 320px height (120px for short strips).
+Overview composes as a two-part hero (7fr headline, 4fr intro and actions), the full-width figure, the status rail, the statement, a 12-column fragment grid with spans of 7, 5 and 4, then the console in a 4fr and 7fr split. Page headers reuse the 7fr and 4fr split. Stock pages run a full-width instrument band, then a main column beside a 340px reading rail that sticks below the top bar.
 
-Breakpoints: at 1100px the 5/7 splits and the Globe layout stack to one column. At 860px the sidebar collapses to a sticky top bar with a 44px menu button that opens the nav as a drop-down sheet. At 600px the ladder drops carrier names to tickers, tables reflow to labelled blocks and charts shorten to 260px. The phone layout works but is not a current design priority; desktop is the reference.
+The rhythm is 1.1rem between sibling panes, 4.5rem between sections, and 5.5rem around the Overview statement and console. The figure's height follows the viewport (clamp 400 to 580px) so the status rail stays near the first screen.
+
+At 1200px the grids stack, the reading rail stops sticking, and the regime pill and data date leave the bar. At 900px the trend mini charts drop from the table. At 860px navigation folds behind a menu button. Phone layouts work and are not a current design priority.
 
 ## Elevation & Depth
 
-Mostly flat with tonal layering: depth comes from ground, card and recess tones and hairlines. Cards and table wraps carry one soft ambient shadow; the deep feature panel has none, its mass is its depth.
+Depth is tonal first: ground, pane, then raised pane, separated by hairlines. Shadows are barely present on panes: a 3% white top edge in dark and a 5% one-pixel shadow in light. Only the floating tooltip casts a real shadow. The top bar uses 86% ground with a 14px blur. The signature figure and stock instrument band carry a faint radial green wash, the only tinted surfaces in the system.
 
 ### Shadow Vocabulary
-- **Card ambient** (`box-shadow: 0 1px 2px rgba(23,38,43,.05), 0 6px 18px -8px rgba(23,38,43,.12)`; night: `0 1px 2px rgba(0,0,0,.25), 0 8px 22px -10px rgba(0,0,0,.5)`): cards, table wraps, the mobile nav sheet.
-- **Tooltip lift** (`box-shadow: 0 6px 20px -6px rgba(0,0,0,.4)`): the shared dark tooltip only.
-- **Inset outline** (`box-shadow: inset 0 0 0 1px` hairline-strong): the current carrier row in a ladder; `0 0 0 2px` ink ring for the hovered heatmap cell.
+- **Pane edge, dark** (`box-shadow: inset 0 1px 0 rgba(255, 255, 255, .03)`): Default pane treatment in the dark theme.
+- **Pane edge, light** (`box-shadow: 0 1px 2px rgba(18, 22, 27, .05)`): Default pane treatment in the light theme.
+- **Tooltip** (`box-shadow: 0 10px 24px -14px rgba(0, 0, 0, .7)`): Floating tooltips only.
 
 ### Named Rules
-**The Quiet Lift Rule.** One ambient shadow for cards, nothing heavier. No glows, no coloured shadows, no hard offsets.
+**The Hairline-First Rule.** A new surface separates itself with a tone step and a hairline. Reach for a shadow only if it truly floats.
 
 ## Shapes
 
-Gently rounded and consistent: 10px for cards, panels and tables; 6px for buttons, inputs, nav items, segmented controls, readouts and tooltips; 4px for code, kbd, heatmap cells and the crosshair value tag; full pills for tags, chips, the as-of chip and the regime pill. Borders are 1px hairlines. Dashed borders mean "not live" (placeholders, disabled buttons, the heatmap diagonal), and dashed lines in charts and ladders mean reference values (sector median, today, cursor). Icons are authored inline SVG on a 24px grid, stroke only, `stroke-width` 1.6 (nav, theme switch, brand) to 1.8 (buttons, arrows, menu), round caps and joins.
+Corners soften a precise system at four sizes: pills (999px) for every control and chip, gently rounded panes (16px), slightly larger panels for the two signature surfaces (20px), and tighter inner elements (10px for inputs, readouts and tooltips; 8px for heat cells; 2 to 4px for bars and marks). Borders are one pixel. Dashed outlines are reserved for placeholders, disabled states, median markers and the self-pairs of the correlation table. Data bars are hatched: 4px of green and a 2px gap.
+
+### Named Rules
+**The Dashed Means Not Real Rule.** A dashed outline on a panel, tag or control says "not live, not built, or not available". Do not use it for decoration.
 
 ## Components
 
 ### Buttons
-Plain and confident, never loud.
-- **Shape:** gently rounded (6px), 600 weight at 0.9rem.
-- **Primary:** brass fill, ink text (`#17262b` in both themes), brass border; hover lightens brass 12% toward white.
-- **Secondary:** card fill, hairline-strong border, ink text; hover darkens the border to ink-muted.
-- **Ghost on deep:** transparent with an on-deep border at 35%, used only inside the feature panel; hover takes the full on-deep border.
-- **Disabled / not built:** recess fill, dashed border, muted text, not-allowed cursor. Disabled buttons say what is missing ("Interactive version not built yet").
-- **Focus:** the global 2px link-teal outline, 2px offset.
+Quiet pills; the only loud one points at the next step.
+- **Shape:** Full pill (999px).
+- **Primary:** Signal Green fill with On Green text, weight 500, .92rem.
+- **Hover / Focus:** Primary lightens 14% toward white; secondary fills with Pane Raised. All controls take a 2px Link Green focus ring offset by 2px. State transitions run .2s on a soft expo-out curve.
+- **Secondary:** Transparent with a Hairline Strong border.
+- **Disabled:** Raised pane, dashed border, muted text, and always a label saying why, such as "Interactive version not built yet".
 
-### Segmented control
-A bordered 6px group of text buttons divided by hairlines; the pressed segment takes the deep slate-teal fill with on-deep text.
+### Chips and Tags
+- **Style:** Small transparent pills with a Hairline Strong border, in Switzer at .76rem.
+- **State:** Live has a green dot and a green-tinted border. Placeholder tags (Not live yet, Not built yet, Offline, Study module) are dashed and muted. Reconstructed is a plain tag, distinct from both.
 
-### Tags and chips
-- **Tag:** 0.78rem 600 pill on card with a hairline-strong border. `Live` adds a calm dot and a calm-tinted border; `Not live yet` / `Not built yet` / `Study module` use a dashed border and muted text.
-- **Chip:** 0.88rem pill on the recess tone, often with a 9px regime dot; for stating regime shares.
+### Segmented Control
+- **Style:** A pill channel in Pane Raised with 3px of inner padding; the selected segment fills with Hairline Strong. Used for the figure's Characters and Ridges switch.
 
 ### Cards / Containers
-- **Corner Style:** 10px.
-- **Background:** card white on stone ground; recess for heads and placeholders.
-- **Shadow Strategy:** card ambient (see Elevation).
-- **Border:** 1px hairline.
-- **Internal Padding:** 1.25rem by 1.35rem.
-- **Not-live panel:** dashed hairline-strong border on the recess tone, no shadow; a heading with a dashed tag, then a sentence saying what will appear and when. Used for the composite (fuel, news, operations) and the own-holdings form.
-
-### Feature panel
-The page's answer. Deep slate-teal, 10px, generous fluid padding, no shadow. Headings and bold text in on-deep, paragraphs in on-deep secondary, `em` and key figures in brass-on-deep. Used for the Overview head (headline, regime reading with a small regime chart, data date, primary actions) and the stock risk read (Caslon figure with its range and fact list beside plain-English words).
+- **Corner Style:** 16px, or 20px on signature surfaces.
+- **Background:** Pane, with a Hairline border.
+- **Shadow Strategy:** Pane edge only, per Elevation & Depth.
+- **Internal Padding:** About 1.15rem by 1.25rem.
 
 ### Inputs / Fields
-- **Style:** card fill, 1px hairline-strong border, 6px, 0.6rem by 0.75rem, inherited font.
-- **Focus:** the global link-teal outline at 0 offset.
-- **Disabled:** recess fill, muted text.
+- **Style:** Pane background, Hairline Strong border, 10px radius.
+- **Focus:** The Link Green ring, with no offset.
+- **Disabled:** Raised pane and muted text.
 
 ### Navigation
-Sidebar links at 0.93rem 500 in ink-secondary with a 19px stroke icon; hover takes a 60% selection-sage wash; the current route takes full selection-sage, ink, 600 weight and a link-teal icon. Counts sit right-aligned in muted text. The night-mode control is a full-width `role="switch"` button at the sidebar foot (moon icon, label, 34 by 20 track whose thumb slides 14px); the choice persists in `localStorage` key `sentinel-theme` and an inline script in the document head applies it before first paint. Breadcrumbs use a muted slash separator.
+Pill links in Ink Secondary at .92rem, filling with Pane Raised on hover and when current, with no icons in the bar. The Stocks link carries the carrier count. The theme switch is a compact toggle that turns green in dark mode and stores its choice under `sentinel-theme`; with nothing stored, the site is dark. Below 860px the links stack behind a menu button.
 
-### Risk ladder (signature)
-Eight carriers on one shared volatility scale, sorted high to low, each row linking to its stock. Per row: ticker and short name, a 22px track, and the Caslon model-average percentage with its range in small Public Sans beneath. On the track: a 3px ink **tick** marks the model average; a brass **bar** (45% mix, 8px, rounded) spans the range across the three models; a **hollow ring** (12px, 2px realized-slate stroke) marks the recent 20-day realized volatility; a **dashed line** marks the sector median. A key above names all four marks, and a shared scale of ticks runs beneath.
-- Reused on the Overview, on stock pages ("Where X sits among the eight", current row inset-outlined), as median-less mini bars in the Stocks table, inside Globe tooltips (inverted for the dark tooltip) and in the Globe detail card.
-- On first Overview render per session the range bars grow from 30% and the marks fade in, staggered 45ms per row; reduced motion removes it.
+### The Sector Figure
+The signature. Eight carriers share one timeline: 12 months of realized volatility, then the mean of the model forecasts, split by a dashed Today line over a faint green tint. Two views of the same numbers switch through the segmented control, stored under `sentinel-fig`, and default to Characters:
+- **Characters:** Rows of DM Mono characters (`.:-=+*#%`) whose height, density and colour follow volatility, from grey through green to amber. Forecast characters are dimmed to 60%.
+- **Ridges:** Overlapping ridge lines in green with a soft fill, solid for realized and dashed for forecast.
 
-### Charts
-Chart.js themed from tokens: Public Sans 12px, ink-muted ticks, hairline grid on the value axis only. Charts draw in their final state immediately (animation duration 0); they never depend on animation frames to appear.
-- **Crosshair:** a solid ink-secondary vertical line snapped to the hovered day, card-filled marker dots on tracked series, a dashed horizontal cursor line with its value in a 4px ink tag on the right axis; linked charts (volume) mirror the vertical line.
-- **Readout:** a recess bar with a hairline border above each interactive chart, showing the hovered date in bold and each series value; gains and losses in calm and crisis.
-- **Price chart:** regime background bands at 12% alpha and labelled big moves (Public Sans 600 11px, haloed in the card colour).
-- **Forecast chart:** a dashed ink-muted "today" divider separating history from forecast, with the model band in brass at 16%.
-- **Keys:** short line swatches (solid, dashed, dotted, box, point) in a key row beneath.
+Hover and click are shared: hover shows the day's reading in a tooltip and marks the row, and click opens that carrier.
 
-### Comparison table
-Sortable columns via header buttons (sorted column in ink), sticky first column, recess header row, right-aligned tabular numbers, row hover in the recess tone, whole-row click to the stock, and ladder mini bars with their range.
+**The Instant Chart Rule.** Charts draw in their final state immediately. Never make data wait for an entrance animation.
 
-### Correlation heatmap
-A table of 62 by 46px cells with 3px spacing and 4px corners, filled along the sequential ramp; the diagonal is dashed and empty. Hovering dims other cells to 45%, rings the cell in ink and underlines its row and column heads. A ramp legend bar sits beneath.
+### Status Rail
+A five-cell band below the figure with hairline dividers: market regime, sector median, highest forecast, lowest forecast and the next-day model check. Each cell has a muted label, a Figure value and a small note. The model check's note turns amber when it misses its target.
 
-### Globe map
-A MapLibre 3D globe in a map card, between two panels. Ocean is card mixed 10% toward TimesFM teal (16% at night), land is card mixed 16% toward ink (20% at night), with card-coloured borders and no tile server or glow. Left panel: the sector list (Airlines pressed in selection sage with a Live tag; other sectors disabled with a dashed Offline tag) and a multi-select carrier list with deep-slate checkboxes, an Entire sector link and a Clear link. Right panel: layer switches (the night-mode switch style, link-teal track when on), grouped Airline operations / Natural hazards / Map. Flights, hubs, delays and airport weather start on; hazards and day/night start off.
-- Hubs are card-filled rings stroked by the map ramp (3px for hubs, 2.2px otherwise); airports of unselected carriers dim to 18%. With one carrier selected, great-circle routes from its first hub draw at 50%.
-- Flights are a tinted SDF airplane silhouette rotated to heading, coloured by the carrier's forecast volatility on the map ramp. Hovering a carrier in the list dims every other carrier's flights and airports to 12-14%.
-- An FAA programme adds a brick ring around the airport. Airport weather is a small offset dot: calm for VFR, stress for MVFR, crisis for IFR and LIFR; an ink outline means an NWS alert.
-- Hazards: earthquakes are hollow ink-2 rings sized by magnitude; storms are stress dots with a dashed stress track; wildfires are small crisis dots; other EONET events are ink-3 dots. Night is ink at 16% (black at 38% at night), recomputed every minute.
-- Beneath the map: a selected-carriers table (the comparison-table style) and a source list where each feed shows a Live tag with its age, a dashed "Last update failed" tag, or "Not run yet".
+### Fragment Cards
+Small pieces of real product UI in a pane, followed by plain caption rows outside it: a short bold fact with hairlines between rows. Fragments include the forecast ladder, regime chart, score table, airborne-flight bars and shared-factor split.
 
-### Globe console (full screen)
-The one deliberate exception to the research-desk look. A **Full screen** button on the globe opens an instrument view filling the screen (Fullscreen API, with a fixed-overlay fallback; Esc exits). It reuses the night token set, slightly darker, scoped to the console container so the rest of the site keeps the user's theme.
-- A 42px top bar and a 34px bottom bar on the ground colour at 92%, hairline-divided: brand `SENTINEL // GLOBAL OPS`, sector, tracked carriers, snapshot time and age, a live UTC clock in link mint; bottom bar shows cursor or centre coordinates, zoom, bearing and per-layer counts.
-- Readouts use `ui-monospace` at 0.72rem, upper case, 0.06em tracking. This is the only place upper-case or monospace labels are allowed.
-- Thin link-mint corner ticks (18px, 1.5px) frame the map; a 15° link-mint graticule at 22% sits under the land.
-- The sector and layer panels float over the map on the card colour at 90% with a 6px backdrop blur; "Hide panels" removes them for an unobstructed globe.
-- Still no glows, neon accents, scanlines or animated chrome.
+### One Forecast, Three Ways
+A console pane with pill tabs for Plain English, Data and Model, and the current ticker at the far right. The same forecast appears as prose, as the raw data file and as the model equation, with code in DM Mono, comments in Ink Muted and values in green.
 
-### Track record
-On each stock page, after the forecast chart: a three-column ruled row (next day, 1 week, 2 months) with a Caslon figure, a verdict line with a 9px dot (calm = on target or well calibrated, stress = overestimating, crisis = underestimating) and a sentence with counts. Below: the next-day chart (95% range as the brass band, actual moves as ink-muted points, misses as larger crisis points, a dashed "Reconstructed | Live" divider), a forecast-vs-actual chart with a 1 week / 2 months segmented control, and a "Latest next-day checks" table with Live / Reconstructed tags. A segmented control switches between the three models.
+### Stocks Table
+A sortable table in a hairline pane, led by carrier ticker and name. Trend mini charts show six months realized and then the dashed forecast, with all carriers on one vertical scale so their heights compare honestly. Risk ladder marks place each carrier's model range (green bar), average (ink tick) and recent level (ring) on a shared track.
 
-### Sidebar toggle
-A 34px icon button at the start of the breadcrumb bar hides the sidebar on desktop and widens the content to 1500px; the choice persists in `localStorage` key `sentinel-side` and is applied before first paint.
+### Stock Instrument Band
+A full-width panel with the forecast as Figure Hero beside a large risk ladder and scale, over five stat cells. Below it, a sticky rail holds the plain-English reading and a carrier switcher, where each row is a ticker, a miniature ladder and a value. Arrow keys step through carriers.
 
-### Tooltip
-One shared tooltip: ink ground, stone text, 6px, 0.84rem, max 300px, with a bold head, key/value rows and a small note. Follows the pointer or focused element; in the dark theme it naturally inverts to a light card.
+### Hatched Data Bars
+Quantities such as flight counts and portfolio weights use hatched green bars, reading as counted units rather than solid fills.
+
+### Placeholders and Not-Live States
+A transparent panel with a dashed border, a heading, a dashed tag and a plain sentence saying what is missing. No example values are ever shown inside.
+
+**The Labelled Placeholder Rule.** Every placeholder says so in words, on the element itself.
+
+### Disclaimer Footer
+"Not financial advice" sits at the foot of every page in a 3fr and 9fr grid below a hairline, followed by the data date in a small line.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** lead an answer page (the Overview, a stock's risk read) with one deep slate-teal feature panel that states the answer, then put the evidence beside or below it.
-- **Do** use the risk ladder whenever carriers are compared on volatility, keeping tick = model average, brass bar = model range, hollow ring = recent 20-day realized, dashed line = sector median.
-- **Do** read every colour from the `:root` custom properties, in CSS and in chart code, so night mode stays a pure token swap.
-- **Do** set headings and answering figures in Libre Caslon Display 400 and everything else in Public Sans with tabular figures.
-- **Do** mark anything not live with a dashed border and a dashed tag ("Not live yet", "Not built yet"), and say what will appear.
-- **Do** draw charts immediately in their final state and give interactive charts the crosshair and readout bar.
-- **Do** use authored inline SVG icons, stroke-only, 1.6 to 1.8 stroke width, round caps.
+- **Do** open a surface with a big plain statement, then let real product output make the argument.
+- **Do** write page headlines in two tones, with the second clause in Ink Muted.
+- **Do** set every figure in Switzer with tabular numerals, and keep shared-scale comparisons on one shared scale.
+- **Do** use amber and coral only when a risk or warning state is actually present.
+- **Do** separate series by solid, dashed and dotted line styles within the green family and neutrals.
+- **Do** label every placeholder in words and dash its border.
+- **Do** keep the "Not financial advice" disclaimer in the footer of every page.
+- **Do** draw icons as authored inline SVG with round caps and stroke weights of 1.6 to 1.8.
 
 ### Don't:
-- **Don't** bring back the dark neon quant dashboard: no glows, neon accents or walls of identical metric tiles. (The globe console is the one dark instrument view, and it still has no glows or neon.)
-- **Don't** show BULLISH/BEARISH or any directional label as a headline, and don't render directional composite signals unless the data export contains them.
-- **Don't** put eyebrow or kicker labels above headings.
-- **Don't** use coloured side-stripe borders on cards, rows or callouts.
-- **Don't** use emoji or Unicode glyphs as icons.
-- **Don't** use gradient text. Gradients appear only as data ramps (heatmap and map legends).
-- **Don't** use more than one deep feature panel on a page, or use deep slate-teal as a generic card colour.
-- **Don't** add entrance animation to charts.
+- **Don't** add eyebrow labels above headlines. Short sentence-case stat labels above a figure are not eyebrows and stay.
+- **Don't** use coloured side-stripes on cards, rows or callouts. Neutral hairline dividers between cells are fine.
+- **Don't** use emoji or glyph icons. The characters in the Sector Figure are data marks, not icons, and are the one sanctioned use.
+- **Don't** apply gradients to text. Gradients are for scales, ramps, chart fills and the faint figure wash.
+- **Don't** show directional labels such as BULLISH or BEARISH, or their softer equivalents like Tailwind and Headwind, unless live data backs them.
+- **Don't** word anything as a buy, sell or hold recommendation, or show invented example values.
+- **Don't** add entrance animation to charts, or a third typeface.
+
+### Known exceptions
+- Stock pages use a one-tone heading, because a company's name can't be split into two clauses like the other headlines.
+- A few small readouts use DM Mono beyond The Machine Text Rule: the footer meta line, the Stocks count, the regime pill's probability and Chart.js tooltips. Don't extend this further.
+- The full-screen Globe console is the one uppercase, instrument-style surface. It stays on the dark tokens in either theme.

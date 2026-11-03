@@ -1,20 +1,20 @@
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Sentinel — Airline Volatility Research</title>
   <meta name="description" content="Sentinel: investment research and education rooted in economics, statistics and data. Forecasting airline-sector volatility with EGARCH, TimesFM, HMM regimes and PCA." />
   <script>
-    /* Apply the saved theme before first paint (light is the default). */
-    try { if (localStorage.getItem('sentinel-theme') === 'dark') document.documentElement.dataset.theme = 'dark'; } catch (e) {}
-    try { if (localStorage.getItem('sentinel-side') === 'collapsed') document.documentElement.dataset.side = 'collapsed'; } catch (e) {}
+    try { if (localStorage.getItem('sentinel-theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}
   </script>
+  <link rel="preconnect" href="https://api.fontshare.com">
+  <link href="https://api.fontshare.com/v2/css?f[]=switzer@400,500,600&display=swap" rel="stylesheet">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Display&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="vendor/maplibre-gl.css" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="assets/styles.css" />
 </head>
 <body>
   <a class="skip" href="#view">Skip to content</a>
@@ -53,27 +53,20 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5A1.5 1.5 0 0 1 6.5 4H19v14H6.5A1.5 1.5 0 0 0 5 19.5zM5 19.5A1.5 1.5 0 0 0 6.5 21H19M9 8h6"/></svg>Glossary</a>
         </nav>
 
+        <p class="asof-chip" id="asofChip"></p>
         <div class="side-regime" id="sideRegime" hidden></div>
 
         <div class="side-foot">
-          <button class="theme-switch" id="themeSwitch" role="switch" aria-checked="false">
+          <button class="theme-switch" id="themeSwitch" role="switch" aria-checked="true" aria-label="Dark mode">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>
             <span>Night mode</span>
             <i class="switch-track" aria-hidden="true"><i class="switch-thumb"></i></i>
           </button>
-          <p class="side-meta" id="sideMeta"></p>
         </div>
       </div>
     </aside>
 
     <div class="main">
-      <div class="crumbbar">
-        <button class="side-toggle" id="sideToggle" type="button" aria-label="Hide sidebar" aria-pressed="false" title="Hide sidebar">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M9.5 4.5v15M6 9h1.5M6 12h1.5"/></svg>
-        </button>
-        <p class="crumbs" id="crumbs">Research</p>
-        <p class="asof-chip" id="asofChip"></p>
-      </div>
 
       <main id="view" class="view" tabindex="-1">
         <p class="loading">Loading research data…</p>
@@ -97,7 +90,7 @@
   <script src="vendor/chart.umd.js"></script>
   <script src="vendor/topojson-client.min.js"></script>
   <script src="vendor/maplibre-gl.js"></script>
-  <script src="globe.js"></script>
-  <script src="app.js"></script>
+  <script src="assets/globe.js"></script>
+  <script src="assets/app.js"></script>
 </body>
 </html>

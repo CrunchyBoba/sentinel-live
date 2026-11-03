@@ -13,8 +13,13 @@ Sections: **Overview, Stocks, Portfolio, Globe, Lab, Glossary.**
 ## What's in the repository
 
 ```
-index.html  app.js  globe.js  styles.css     the website (served by GitHub Pages from the top level)
+index.html                                   the page GitHub Pages serves from the top level
 README.md  DESIGN.md  PRODUCT.md             docs: this file, the design system, the product brief
+
+assets/                                      the website's own code
+  app.js                 pages, charts and the Overview figure
+  globe.js               the 3D globe
+  styles.css             all colours, fonts and layout
 
 data/                                        everything the site reads
   sentinel_data.json     prices, forecasts, regimes, PCA, track record      (written daily)
@@ -95,15 +100,15 @@ To run the pipeline yourself: `pip install torch --index-url https://download.py
 - **An airline's network:** edit `data/airports.csv` in Excel or Google Sheets (carrier, IATA and ICAO codes,
   role, name, city, country, lat, lon). The Action re-runs on save.
 - **Model settings** (horizon, simulations, windows): the constants at the top of `pipeline/sentinel_model.py`.
-- **Colours / fonts:** the tokens at the top of `styles.css`; rules in `DESIGN.md`.
-- **Glossary terms:** the `GLOSSARY` array in `app.js`.
+- **Colours / fonts:** the tokens at the top of `assets/styles.css`; rules in `DESIGN.md`.
+- **Glossary terms:** the `GLOSSARY` array in `assets/app.js`.
 
 ## Placeholders (labelled on the site)
 
 - Globe: Banks, Energy, Shipping and Semiconductors sectors are shown as **Offline**.
 - Portfolio: "Your own holdings" entry is visible but not built yet.
 - Lab: interactive versions of the six study models aren't built yet.
-- Fuel / news / operations scores on stock pages appear only when a live composite file is exported.
+- Fuel / news / operations scores on stock pages appear only once they reach the daily data.
 
 ## Notes
 

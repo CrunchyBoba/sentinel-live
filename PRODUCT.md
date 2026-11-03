@@ -20,19 +20,19 @@ Real models, honestly shown. The production models (EGARCH, TimesFM, HMM regimes
 
 ## Operating Context
 
-- Six sections: Overview, Lab, Stocks, Globe, Portfolio, Glossary (hash routes in `app.js`).
+- Six sections: Overview, Lab, Stocks, Globe, Portfolio, Glossary (hash routes in `assets/app.js`).
 - Data refresh is automatic: the **Daily update** GitHub Action (`.github/workflows/daily-update.yml`) re-runs the models after every trading day (`pipeline/update_model.py`, using `pipeline/sentinel_model.py`) and the Globe layers (`pipeline/update_globe_data.py`), then commits `data/`. The Colab notebook (`notebooks/`) imports the same model module for exploration.
 - Forecast horizon comes from the data file (currently 42 trading days, "next ~2 months").
 - Coverage: DAL, AAL, UAL, LUV, ALK, JBLU, ULCC, ALGT.
 
 ## Capabilities and Constraints
 
-- Static HTML/CSS/JS, no build step, served from GitHub Pages at the repository root. Vendored in `vendor/` so the site needs no CDN: Chart.js 4.4.1, topojson-client 3.1.0, MapLibre GL 5.24.0. Data in `data/`, including the Natural Earth 110m world outline.
+- Static HTML/CSS/JS, no build step, served from GitHub Pages at the repository root. The site's own code is in `assets/`. Vendored in `vendor/`: Chart.js 4.4.1, topojson-client 3.1.0, MapLibre GL 5.24.0. Fonts load from Fontshare (Switzer) and Google Fonts (DM Mono). Data in `data/`, including the Natural Earth 110m world outline.
 - All model output is rendered from `data/sentinel_data.json`, rewritten after every trading day.
 - The Globe is the one page with its own data. Hub and airport locations are reference geography in `data/airports.csv` (one row per carrier and airport, with coordinates), not model output; the page labels them as such. Live layers (flights, delays, airport weather, alerts, hazards, fuel) come from `globe_data.json`, which the daily Action refreshes from free public sources. Only OpenSky uses a key, stored as repository secrets. Every source records whether its last update worked, and the page shows that; a failed source keeps its previous data and says so.
 - The 3D globe needs no tile server: land comes from `data/world-110m.json`. It has a full-screen console view.
 - Track record: every forecast is appended to `data/forecast_log.csv` before its outcome exists and never edited. Stock pages score each model at three horizons (next-day 95% range, 1 week, 2 months). About six months before the first live run are reconstructed walk-forward and labelled "Reconstructed"; later rows are "Live". Misses are shown as plainly as hits.
-- Fuel / news / operations (the composite) are shown only when the export contains a live `composite` block. With none, every directional label is hidden and the UI says "Not live yet"; no example values are shown.
+- Fuel / news / operations (the composite) are shown only when the daily data contains a live `composite` block. With none, every directional label is hidden and the UI says "Not live yet"; no example values are shown.
 - Intentional placeholders (must stay labelled as such): the Globe's other sectors (Banks, Energy, Shipping, Semiconductors, marked Offline), Portfolio "Your own holdings" form (disabled, "Not built yet"), and interactive versions of the six Lab study models (disabled, "Interactive version not built yet").
 
 ## Brand Commitments

@@ -57,7 +57,7 @@ const ICON_BACK = '<svg class="flip" viewBox="0 0 24 24" aria-hidden="true"><pat
 const ICON_DOT = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 12h8"/></svg>';
 
 /* ---------- composite (fuel / news / operations) ----------
-   Only shown when the notebook exported a live composite block.
+   Only shown when the daily data contains a live composite block.
    Directional labels are never shown from example data. */
 function composite(sym) {
   const row = DATA && DATA.composite && DATA.composite[sym];
@@ -194,11 +194,6 @@ let activeCharts = [];
 let routeCleanup = [];
 function destroyCharts() { activeCharts.forEach(c => { try { c.destroy(); } catch (e) {} }); activeCharts = []; }
 
-function setCrumbs(parts) {
-  $('#crumbs').innerHTML = parts.map((p, i) => i === parts.length - 1
-    ? `<b>${esc(p[0])}</b>` : `<a href="${p[1]}">${esc(p[0])}</a>`).join('<span class="sep" aria-hidden="true">/</span>');
-}
-
 function router(keepFocus) {
   destroyCharts(); tip.hide();
   routeCleanup.forEach(f => f()); routeCleanup = [];
@@ -210,7 +205,6 @@ function router(keepFocus) {
   view.innerHTML = '';
   $$('#tabs a').forEach(a => { if (a.dataset.tab === key) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   closeMenu();
-  setCrumbs([['Research', '#/overview'], [route.title, '#/' + key]]);
   document.title = `${route.title} — Sentinel`;
   try {
     route.fn(view, arg && decodeURIComponent(arg));
@@ -263,7 +257,7 @@ function buildLadder(current) {
   });
   wrap.appendChild(ul);
   const ticks = [];
-  for (let v = SCALE.lo; v <= SCALE.hi; v += 10) ticks.push(`<span style="left:${xPct(v)}">${v}%</span>`);
+  for (let v = SCALE.lo; v <= SCALE.hi; v += (SCALE.hi - SCALE.lo > 60 ? 20 : 10)) ticks.push(`<span style="left:${xPct(v)}">${v}%</span>`);
   wrap.appendChild(el('div', { class: 'lscale', 'aria-hidden': 'true' }, `<span></span><span class="ticks">${ticks.join('')}</span><span></span>`));
   bindTip(wrap, '.lrow', (n) => ladderTip(statOf(n.dataset.t)));
   return wrap;
@@ -279,67 +273,125 @@ const ladderKey = () => `<p class="ladder-key">
    ============================================================ */
 function renderOverview(view) {
   const reg = currentRegime();
-  const top = el('div', { class: 'ov-top' });
+  const hi = STATS[0], lo = STATS[STATS.length - 1];
+  const T = DATA.track && DATA.track.sector;
+  const eg = T && T.egarch;
 
-  const feat = el('section', { class: 'feature ov-feature', 'aria-labelledby': 'ovTitle' });
-  feat.innerHTML = `
-    <h1 id="ovTitle">How big, <em>not which way.</em></h1>
-    <p class="lead">Sentinel forecasts how much the eight major U.S. airline stocks are likely to swing over the
-    ${esc(DATA.horizon_label || 'next ~2 months')}, using ${termLink('EGARCH')}, Google's ${termLink('TimesFM')},
-    a market-${termLink('regime', 'Regime')} model and ${termLink('PCA')}. It never says which way a price will go.</p>
-    <div class="ov-actions">
-      <a class="btn primary" href="#/stocks">Compare the eight carriers ${ICON_ARROW}</a>
-      <a class="btn ghost-deep" href="#/lab">How the models work</a>
-    </div>
-    ${reg ? `<div class="ov-regime">
-      <div class="reads"><span class="big">${esc(reg.name)}</span><span class="pr">${pct(reg.p * 100, 0)} likely</span></div>
-      <p>Market regime today. ${esc(REGIME_WORDS[reg.name] || '')} The strip shows the past 12 months.</p>
-      <p class="ov-date">Prices through ${esc(longDate(dataDate()))} · the models re-run automatically after every trading day</p>
-      <div class="canvas-box" role="img" aria-label="${esc(regimeSummary())}"><canvas id="cOvRegime"></canvas></div>
-    </div>` : ''}`;
-  top.appendChild(feat);
+  const hero = el('section', { class: 'ox-hero', 'aria-labelledby': 'ovTitle' });
+  hero.innerHTML = `<h1 id="ovTitle">How big,<span>not which way.</span></h1>
+    <div><p class="lead">Two-month volatility forecasts for the eight major U.S. airlines, re-run after every trading day and scored against what actually happened.</p>
+      <div class="ox-actions"><a class="btn primary" href="#/stocks">Compare the eight ${ICON_ARROW}</a><a class="btn" href="#/lab">How the models work</a></div></div>`;
+  view.appendChild(hero);
 
-  const lad = el('section', { class: 'card ladder-card', 'aria-labelledby': 'ladTitle' });
-  lad.innerHTML = `<div class="ladder-head"><div><h2 id="ladTitle">Forecast volatility, all eight</h2>
-    <p class="sub">${termLink('Annualized volatility', 'Annualized volatility')} expected over the ${esc(DATA.horizon_label || 'next ~2 months')}, highest first.</p></div></div>`;
-  const ladder = buildLadder();
-  if (!renderOverview.drawn) { $('.ladder', ladder).classList.add('draw'); renderOverview.drawn = true; }
-  lad.appendChild(ladder);
-  lad.appendChild(el('div', { style: 'margin-top:.8rem' }, ladderKey()));
-  top.appendChild(lad);
-  view.appendChild(top);
+  const fig = el('figure', { class: 'ox-fig' });
+  fig.innerHTML = `<figcaption class="ox-fighead"><span class="cap"><b>The sector, day by day</b>12 months of annualized volatility, then the forecast. Hover to read any day; click to open a carrier.</span>
+      <span class="ctl"><span class="k" id="ridgeKey"></span>
+        <span class="seg" role="group" aria-label="Chart view"><button type="button" data-v="field">Characters</button><button type="button" data-v="ridge">Ridges</button></span></span></figcaption>
+    <div class="ox-ridge" role="img" aria-label="Volatility of the eight airlines over the past twelve months and forecast for the next two, one row per carrier."><canvas id="cRidge"></canvas></div>`;
+  view.appendChild(fig);
 
-  // how to read it
-  const read = el('section', { class: 'section', 'aria-labelledby': 'readTitle' });
-  read.innerHTML = `<h2 id="readTitle">How to read Sentinel</h2>
-    <p class="sub">Three ideas carry every page.</p>
-    <div class="readlist">
-      <div><h3>Size, not direction</h3><p>Returns are close to unpredictable. Volatility is not: calm and wild
-        periods bunch together. Every number here is about how far a stock may move, never which way.</p></div>
-      <div><h3>Sector versus company</h3><p>Airlines move together. ${termLink('PCA')} splits each stock's risk
-        into the part the whole sector shares and the part that belongs to one company.</p></div>
-      <div><h3>Models disagree, on purpose</h3><p>We show three forecasts side by side. When they agree, the range
-        is narrow; when they don't, treat the outlook as uncertain.</p></div>
-    </div>`;
-  view.appendChild(read);
+  const rail = el('section', { class: 'ox-rail', 'aria-label': 'Sector status' });
+  const dh = eg && eg.all && eg.all.day, ds2 = eg && eg.since && eg.since.day;
+  rail.innerHTML = `
+    ${reg ? `<div><p class="l">Market regime</p><p class="v">${esc(reg.name)}<small>${pct(reg.p * 100, 0)}</small></p><p class="s">${termLink('What is a regime?', 'Regime')}</p></div>` : ''}
+    <div><p class="l">Sector median</p><p class="v">${pct(SECTOR_MED, 1)}</p><p class="s">Forecast, annualized</p></div>
+    <div><p class="l">Highest forecast</p><p class="v">${hi.t}<small>${pct(hi.avg, 0)}</small></p><p class="s">${esc(hi.short)}</p></div>
+    <div><p class="l">Lowest forecast</p><p class="v">${lo.t}<small>${pct(lo.avg, 0)}</small></p><p class="s">${esc(lo.short)}</p></div>
+    ${dh ? `<div><p class="l">EGARCH next-day check</p><p class="v">${pct(dh.hit * 100, 0)}<small>target 95%</small></p><p class="s${ds2 && ds2.verdict !== 'ok' ? ' warn' : ''}">${ds2 ? `${pct(ds2.hit * 100, 0)} since ${esc(shortDate(DATA.track.start))}` : 'Moves inside the range'}</p></div>` : ''}`;
+  view.appendChild(rail);
 
-  // models
-  const models = el('section', { class: 'section', 'aria-labelledby': 'modTitle' });
-  models.innerHTML = `<h2 id="modTitle">The four models behind the numbers</h2>
-    <p class="sub">All four run in one notebook; its output is the data file this site reads.</p>
-    <table class="modeltable"><thead><tr><th scope="col">Model</th><th scope="col">What it does</th><th scope="col">Where you see it</th></tr></thead><tbody>
-      <tr><td><b>EGARCH</b><span>Econometric</span></td><td>Forecasts volatility from recent swings, with bad news raising risk more than good news.</td><td><a href="#/stocks">Stocks</a></td></tr>
-      <tr><td><b>TimesFM</b><span>Foundation model</span></td><td>Google's pre-trained time-series model, run ${termLink('zero-shot', 'Zero-shot')} on each stock, alone and with the sector.</td><td><a href="#/stocks">Stocks</a></td></tr>
-      <tr><td><b>HMM</b><span>Regime detection</span></td><td>Sorts the market into Calm, Stressed or Crisis and gives today's probability of each.</td><td><a href="#/portfolio">Portfolio</a>, sidebar</td></tr>
-      <tr><td><b>PCA</b><span>Risk decomposition</span></td><td>Separates sector-wide risk from company-specific risk.</td><td><a href="#/portfolio">Portfolio</a></td></tr>
-    </tbody></table>`;
-  view.appendChild(models);
+  view.appendChild(el('p', { class: 'ox-say' }, `Returns are close to unpredictable. Volatility isn't: calm and wild stretches bunch together. <b>Sentinel measures the size of the next move.</b>`));
+
+  // product fragments
+  const bento = el('section', { class: 'ox-bento', 'aria-label': 'Sector detail' });
+  const f1 = el('div', { class: 'ox-frag span-7' });
+  const p1 = el('div', { class: 'pane' }, `<h3>Forecast, all eight</h3><p class="sub">Expected over the ${esc(DATA.horizon_label || 'next ~2 months')}, highest first, on one shared scale.</p>`);
+  p1.appendChild(buildLadder());
+  p1.appendChild(el('div', { style: 'margin-top:.7rem' }, ladderKey()));
+  f1.appendChild(p1);
+  bento.appendChild(f1);
+  if (reg) {
+    bento.appendChild(el('div', { class: 'ox-frag span-5' }, `<div class="pane" style="display:flex;flex-direction:column"><h3>Market regime</h3>
+      <p class="sub">Past 12 months, from the ${termLink('HMM')}.</p>
+      <p class="ox-regime-now">${esc(reg.name)}<small>${pct(reg.p * 100, 0)} likely</small></p>
+      <div class="canvas-box" style="flex:1;min-height:220px;height:auto" role="img" aria-label="${esc(regimeSummary())}"><canvas id="cOvRegime"></canvas></div>
+      <div class="keyrow">${REGIMES.map(k => `<span><i class="dot" style="background:${regimeColor(k)}"></i>${k} ${pct((reg.all[k] || 0) * 100, 0)}</span>`).join('')}</div></div>`));
+  }
+  if (T) {
+    const names = (DATA.track.models) || {};
+    const row = (k) => { const m = T[k]; if (!m) return ''; const a2 = m.all || {}, si = m.since || {};
+      return `<tr><td>${esc(names[k] || k)}</td><td>${a2.day ? pct(a2.day.hit * 100, 0) : '—'}</td>
+        <td class="${si.day && si.day.verdict !== 'ok' ? 'bad' : ''}">${si.day ? pct(si.day.hit * 100, 0) : '—'}</td>
+        <td>${a2.m2 ? fmt(a2.m2.mae, 1) : '—'}</td></tr>`; };
+    bento.appendChild(el('div', { class: 'ox-frag span-4' }, `<div class="pane"><h3>How the models have done</h3>
+      <p class="sub">Next-day moves inside the 95% range, and the average two-month miss in points.</p>
+      <table class="ox-score"><thead><tr><th scope="col">Model</th><th scope="col">All</th><th scope="col">Since ${esc(shortDate(DATA.track.start))}</th><th scope="col">2-mo miss</th></tr></thead>
+      <tbody>${Object.keys(T).map(row).join('')}</tbody></table></div>
+      <ul class="ox-caps"><li><b>Logged before</b> the outcome exists</li><li><b>Misses shown</b> as plainly as hits</li></ul>`));
+  }
+  const ops = el('div', { class: 'ox-frag span-4' }, `<div class="pane"><h3>In the air right now</h3>
+      <p class="sub" id="opsSub">Latest flight snapshot.</p><ul class="ox-bars" id="opsBars"><li><b>…</b><i style="width:0"></i><span></span></li></ul></div>
+      <ul class="ox-caps"><li><b>Live flights</b> and airport delays</li><li><a href="#/globe">Open the 3D globe</a></li></ul>`);
+  bento.appendChild(ops);
+  const pc1 = (DATA.portfolio && DATA.portfolio.pca_explained && DATA.portfolio.pca_explained[0]) || 0;
+  bento.appendChild(el('div', { class: 'ox-frag span-4' }, `<div class="pane"><h3>One shared factor</h3>
+      <p class="sub">How much of all eight stocks' movement a single factor explains.</p>
+      <p class="ox-big">${pct(pc1 * 100, 0)}</p><div class="ox-split" role="img" aria-label="${pct(pc1 * 100, 0)} shared"><i style="width:${(pc1 * 100).toFixed(1)}%"></i></div>
+      <p class="sub" style="margin:0">The carriers largely move as one, so spreading money across them only goes so far.</p></div>
+      <ul class="ox-caps"><li><b>${termLink('PCA', 'PCA')}</b> risk decomposition</li><li><a href="#/portfolio">See the portfolio view</a></li></ul>`));
+  view.appendChild(bento);
+  fetch('data/globe_data.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(g => {
+    const box = $('#opsBars'); if (!box || !g || !g.flight_counts) { if (box) box.innerHTML = '<li class="note">Flight data unavailable.</li>'; return; }
+    const rows = Object.entries(g.flight_counts).map(([t, c]) => [t, c.airborne || 0]).sort((a2, b2) => b2[1] - a2[1]);
+    const max = rows[0][1] || 1;
+    box.innerHTML = rows.map(([t, n]) => `<li><b>${t}</b><i style="width:${Math.max(2, n / max * 100).toFixed(0)}%"></i><span>${n}</span></li>`).join('');
+    const when = (g.flights_time || '').replace('T', ' ').slice(0, 16);
+    $('#opsSub').textContent = `Airborne flights per carrier, snapshot ${when} UTC.`;
+  }).catch(() => {});
+
+  // console: one forecast, three ways
+  const top = STATS[0], nar = buildNarrative(top.t);
+  const how = el('section', { class: 'ox-how', 'aria-labelledby': 'howTitle' });
+  const when = DATA.pipeline && DATA.pipeline.models && DATA.pipeline.models.egarch && DATA.pipeline.models.egarch.at;
+  const fa = DATA.stocks[top.t].forecast_avg || {};
+  const panes = {
+    read: nar.paras.map(p => `<p>${p}</p>`).join(''),
+    data: `<pre><i>// data/sentinel_data.json, stocks.${top.t}.forecast_avg</i>
+{
+  "egarch": <b>${fa.egarch}</b>,
+  "timesfm_alone": <b>${fa.timesfm_alone}</b>,
+  "timesfm_together": <b>${fa.timesfm_together}</b>
+}
+<i>// recent realized (20-day): ${pct(top.recent)}
+// generated ${esc(DATA.generated || '')} UTC${when ? ', EGARCH finished ' + esc(when) : ''}</i></pre>`,
+    model: `<pre><i>// EGARCH(1,1,1): volatility from recent shocks; bad news weighs more</i>
+ln σ²ₜ = ω + β·ln σ²ₜ₋₁ + α·(|zₜ₋₁| − E|z|) + γ·zₜ₋₁
+
+<i>// annualized from daily volatility</i>
+σ_annual = σ_daily × √252
+
+<i>// typical move over the ${DATA.horizon_days || 42}-day horizon</i>
+${top.t}: ${pct(top.avg, 0)} × √(${DATA.horizon_days || 42}/252) = <b>±${pct(horizonMove(top.avg), 0)}</b></pre>`,
+  };
+  how.innerHTML = `<div><h2 id="howTitle">One forecast, three ways to read it.</h2>
+      <p>In plain English, as the raw data file, or as the model behind it. Nothing is a black box: it all comes from one open pipeline.</p>
+      <p><a href="#/lab">All the models</a> · <a href="#/glossary">Glossary</a></p></div>
+    <div class="ox-console"><div class="ox-tabs" role="tablist" aria-label="Forecast views">
+        <button role="tab" data-p="read" aria-selected="true" type="button">Plain English</button>
+        <button role="tab" data-p="data" aria-selected="false" type="button">Data</button>
+        <button role="tab" data-p="model" aria-selected="false" type="button">Model</button>
+        <span class="who">${top.t}</span></div>
+      <div class="ox-body" id="oxBody" role="tabpanel"></div></div>`;
+  view.appendChild(how);
+  $('#oxBody').innerHTML = panes.read;
+  $('.ox-tabs', how).addEventListener('click', (e) => { const b = e.target.closest('button[data-p]'); if (!b) return;
+    $$('button[data-p]', how).forEach(x => x.setAttribute('aria-selected', x === b ? 'true' : 'false')); $('#oxBody').innerHTML = panes[b.dataset.p]; });
 
   // data sources
   const data = el('section', { class: 'section', 'aria-labelledby': 'dataTitle' });
   data.innerHTML = `<h2 id="dataTitle">Where the data comes from</h2>
-    <p class="sub">Market data is live in every export. Fuel, news and operations ${compositeLive()
-      ? 'are included in this export.' : 'are collected by the pipeline but <b>not in this export yet</b>, so the site hides them.'}</p>
+    <p class="sub">Market data is refreshed after every trading day. Fuel, news and operations ${compositeLive()
+      ? 'are included.' : 'are collected by the pipeline but <b>not in the daily data yet</b>, so the site hides them.'}</p>
     <table class="srctable"><thead><tr><th scope="col">Signal</th><th scope="col">Source</th><th scope="col">How we collect it</th><th scope="col">Status</th></tr></thead><tbody>
       ${[
         ['Prices &amp; returns', 'yfinance', 'Daily prices for all 8 tickers back to 2018, including the COVID shock.', true],
@@ -352,7 +404,143 @@ function renderOverview(view) {
     </tbody></table>`;
   view.appendChild(data);
 
-  drawRegimeChart('cOvRegime', { compact: true });
+  drawRegimeChart('cOvRegime');
+  drawRidge();
+}
+
+/* Signature figure. Eight carriers on one timeline: 12 months of realized volatility, then the
+   average forecast path. Two views of the same numbers: rows of characters, whose height, density
+   and colour follow volatility, or ridge lines. Hover, click and the time axis are shared. */
+let RIDGE_VIEW = 'field';
+try { RIDGE_VIEW = localStorage.getItem('sentinel-fig') || 'field'; } catch (e) {}
+function drawRidge() {
+  const cv = $('#cRidge'); if (!cv) return;
+  const fd = DATA.forecast_dates || [], N = 252;
+  const rows = STATS.map(st => {
+    const S = DATA.stocks[st.t], rv = S.realized_vol, ps = [S.egarch_path, S.timesfm_alone_path, S.timesfm_together_path].filter(Boolean);
+    const fut = fd.map((_, i) => { const v = ps.map(p => p[i]).filter(isNum); return v.length ? v.reduce((a2, b2) => a2 + b2, 0) / v.length : null; });
+    const past = rv.values.slice(-N);
+    return { st, dates: rv.dates.slice(-N).concat(fd), vals: past.concat(fut), split: past.length - 1 };
+  });
+  const all = rows.flatMap(r => r.vals).filter(isNum).sort((p, q) => p - q);
+  const vMin = all[0], vMax = all[all.length - 1];
+  const pLo = all[Math.floor(all.length * .02)], pHi = all[Math.floor(all.length * .98)];
+  const norm = (v) => Math.max(0, Math.min(1, (v - pLo) / (pHi - pLo)));
+  const green = css('--green'), ink = css('--ink'), ink2 = css('--ink-2'), ink3 = css('--ink-3'), card = css('--card'), line = css('--line');
+  const G = hexRgb(green), Mut = hexRgb(css('--line-strong')), Hot = hexRgb(css('--brass'));
+  const heat = (f) => f < .65 ? mix(Mut, G, f / .65) : mix(G, Hot, (f - .65) / .35);
+  const GLYPHS = '.:-=+*#%', L = 56, R = 62, TOP = 8, BOT = 24, CW = 6.2, LH = 8.6;
+  let hover = null, g = null, cache = null;
+  const setKey = () => {
+    const k = $('#ridgeKey'); if (!k) return;
+    k.innerHTML = RIDGE_VIEW === 'field' ? `<span>Lower <i class="ramp"></i> Higher</span>` : `<span><i></i>Realized</span><span><i class="d"></i>Forecast</span>`;
+    $$('.ox-fighead button[data-v]').forEach(b2 => b2.setAttribute('aria-pressed', b2.dataset.v === RIDGE_VIEW ? 'true' : 'false'));
+  };
+  /* The character layer is expensive, so it is drawn once per size and reused while hovering. */
+  function fieldLayer(w, h, dpr) {
+    const key = `${w}x${h}x${dpr}`;
+    if (cache && cache.key === key) return cache.canvas;
+    const off = document.createElement('canvas'); off.width = Math.round(w * dpr); off.height = Math.round(h * dpr);
+    const c = off.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const W = w - L - R, n = rows[0].vals.length, band = (h - TOP - BOT) / rows.length;
+    const cols = Math.floor(W / CW), lines = Math.max(2, Math.floor((band - 4) / LH));
+    c.font = "400 10px 'DM Mono', monospace"; c.textBaseline = 'alphabetic'; c.textAlign = 'left';
+    rows.forEach((r, ri) => {
+      const base = TOP + (ri + 1) * band - 4;
+      for (let col = 0; col < cols; col++) {
+        const idx = Math.min(n - 1, Math.round(col / (cols - 1) * (n - 1))), v = r.vals[idx];
+        if (!isNum(v)) continue;
+        const f = norm(v), lit = Math.max(1, Math.round(f * lines)), fc = idx > r.split;
+        for (let l = 0; l < lines; l++) {
+          const on = l < lit;
+          c.globalAlpha = on && fc ? .6 : 1;
+          c.fillStyle = on ? heat(Math.max(.22, f * (.55 + .45 * (l + 1) / lit))) : line;
+          c.fillText(on ? GLYPHS[Math.min(GLYPHS.length - 1, Math.floor((.25 + .75 * f) * (1 - l / lines) * GLYPHS.length))] : '.', L + col * CW, base - l * LH);
+        }
+      }
+    });
+    c.globalAlpha = 1;
+    cache = { key, canvas: off };
+    return off;
+  }
+  function paint() {
+    const box = cv.parentElement.getBoundingClientRect(), dpr = devicePixelRatio || 1;
+    if (!box.width) return;
+    const w = box.width, h = box.height;
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, w, h);
+    const W = w - L - R, n = rows[0].vals.length, field = RIDGE_VIEW === 'field';
+    const band = (h - TOP - BOT) / rows.length, step = (h - TOP - BOT) / (rows.length + 1.1), amp = step * 2.1;
+    const X = (i) => L + i / (n - 1) * W, base = (ri) => field ? TOP + (ri + 1) * band - 4 : TOP + amp + ri * step;
+    const Y = (ri, v) => base(ri) - (v - vMin) / (vMax - vMin) * amp;
+    g = { n, W, band, step, amp, field };
+    const split = rows[0].split, sx = X(split);
+    c.fillStyle = `rgba(${G[0]},${G[1]},${G[2]},.05)`; c.fillRect(sx, 0, L + W - sx, h - BOT);
+    if (field) {
+      c.drawImage(fieldLayer(w, h, dpr), 0, 0, w, h);
+    } else {
+      rows.forEach((r, ri) => {
+        const on = hover && hover.ri === ri, dim = hover && !on;
+        const trace = (from, to, close) => { c.beginPath(); let started = false;
+          for (let i = from; i <= to; i++) { const v = r.vals[i]; if (!isNum(v)) continue; const x = X(i), y = Y(ri, v); if (!started) { if (close) { c.moveTo(x, base(ri)); c.lineTo(x, y); } else c.moveTo(x, y); started = true; } else c.lineTo(x, y); }
+          if (close) { c.lineTo(X(to), base(ri)); c.closePath(); } };
+        trace(0, n - 1, true);
+        c.fillStyle = card; c.fill();
+        const grad = c.createLinearGradient(0, base(ri) - amp, 0, base(ri));
+        grad.addColorStop(0, `rgba(${G[0]},${G[1]},${G[2]},${on ? .34 : .2})`); grad.addColorStop(1, `rgba(${G[0]},${G[1]},${G[2]},0)`);
+        c.fillStyle = grad; c.fill();
+        c.lineJoin = 'round'; c.lineWidth = on ? 2 : 1.3; c.globalAlpha = dim ? .35 : 1; c.strokeStyle = on ? ink : green;
+        trace(0, split, false); c.stroke();
+        c.setLineDash([4, 3]); trace(split, n - 1, false); c.stroke(); c.setLineDash([]);
+        c.globalAlpha = 1;
+        c.strokeStyle = line; c.lineWidth = 1; c.beginPath(); c.moveTo(L, base(ri) + .5); c.lineTo(L + W, base(ri) + .5); c.stroke();
+      });
+    }
+    c.font = "400 12px 'DM Mono', monospace"; c.textBaseline = 'alphabetic';
+    rows.forEach((r, ri) => {
+      const on = hover && hover.ri === ri;
+      c.textAlign = 'left'; c.fillStyle = on ? ink : ink2; c.fillText(r.st.t, 0, base(ri) - 1);
+      c.textAlign = 'right'; c.fillStyle = on ? ink : ink3; c.fillText(pct(r.st.avg, 0), w, base(ri) - 1);
+    });
+    c.fillStyle = ink3; c.textAlign = 'center';
+    const dates = rows[0].dates;
+    for (let i = 0; i < split - 22; i += 42) c.fillText(shortDate(dates[i]), Math.max(L + 20, X(i)), h - 5);
+    c.fillStyle = ink; c.fillText('Today', sx, h - 5);
+    c.fillStyle = ink3; c.textAlign = 'right'; c.fillText(shortDate(dates[n - 1]), L + W, h - 5);
+    c.strokeStyle = ink3; c.setLineDash([2, 3]); c.lineWidth = 1; c.beginPath(); c.moveTo(sx + .5, 0); c.lineTo(sx + .5, h - BOT); c.stroke(); c.setLineDash([]);
+    if (hover) {
+      const x = X(hover.i), v = rows[hover.ri].vals[hover.i];
+      c.strokeStyle = ink2; c.lineWidth = 1; c.beginPath(); c.moveTo(x + .5, 0); c.lineTo(x + .5, h - BOT); c.stroke();
+      if (field) {
+        c.strokeStyle = ink3; c.strokeRect(L - 4.5, base(hover.ri) - band + 5.5, W + 8, band - 3);
+      } else if (isNum(v)) {
+        c.beginPath(); c.arc(x, Y(hover.ri, v), 4, 0, 7); c.fillStyle = card; c.fill(); c.lineWidth = 2; c.strokeStyle = ink; c.stroke();
+      }
+    }
+  }
+  const leave = () => { hover = null; tip.hide(); paint(); };
+  cv.addEventListener('mousemove', (e) => {
+    if (!g) return;
+    const b = cv.getBoundingClientRect(), x = e.clientX - b.left, y = e.clientY - b.top;
+    const i = Math.round((x - L) / g.W * (g.n - 1));
+    if (i < 0 || i >= g.n) { leave(); return; }
+    const raw = g.field ? Math.floor((y - TOP) / g.band) : Math.round((y - TOP - g.amp + g.step * .35) / g.step);
+    const ri = Math.max(0, Math.min(rows.length - 1, raw));
+    hover = { ri, i }; paint();
+    const r = rows[ri], fc = i > r.split, v = r.vals[i];
+    tip.show(`<span class="t-h">${esc(r.st.short)} (${r.st.t})</span>${tipRows([[longDate(r.dates[i]), fc ? 'Forecast' : 'Realized'], ['Volatility', pct(v)], ...(fc ? [] : [['Regime', regimeByDate()[r.dates[i]] || '—']]), ['Typical 2-month move', '±' + pct(horizonMove(v), 0)]])}<span class="t-n">Click to open ${r.st.t}</span>`, e.clientX, e.clientY);
+  });
+  cv.addEventListener('mouseleave', leave);
+  cv.addEventListener('click', () => { if (hover) location.hash = '#/stocks/' + rows[hover.ri].st.t; });
+  $('.ox-fighead .seg').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-v]'); if (!b) return;
+    RIDGE_VIEW = b.dataset.v; try { localStorage.setItem('sentinel-fig', RIDGE_VIEW); } catch (err) {}
+    hover = null; tip.hide(); setKey(); paint();
+  });
+  setKey(); paint();
+  const ro = new ResizeObserver(paint); ro.observe(cv.parentElement);
+  routeCleanup.push(() => ro.disconnect());
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { cache = null; if (cv.isConnected) paint(); });
 }
 
 function regimeSummary() {
@@ -363,11 +551,33 @@ function regimeSummary() {
 /* ============================================================
    STOCKS — sortable comparison table
    ============================================================ */
+/* Realized volatility then the mean forecast, every carrier on the same vertical scale. */
+function trendSvg(t) {
+  const N = 126, W = 240, H = 44, S = DATA.stocks[t], fd = DATA.forecast_dates || [];
+  const ps = [S.egarch_path, S.timesfm_alone_path, S.timesfm_together_path].filter(Boolean);
+  const fut = fd.map((_, i) => { const v = ps.map(p => p[i]).filter(isNum); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; });
+  const past = S.realized_vol.values.slice(-N);
+  if (!trendSvg.range) {
+    const all = DATA.tickers.flatMap(x => DATA.stocks[x].realized_vol.values.slice(-N)).filter(isNum);
+    trendSvg.range = [Math.min(...all), Math.max(...all)];
+  }
+  const [lo, hi] = trendSvg.range, n = past.length + fut.length - 1;
+  const X = (i) => (i / n * W).toFixed(1), Y = (v) => (H - 2 - (Math.min(hi, Math.max(lo, v)) - lo) / (hi - lo) * (H - 4)).toFixed(1);
+  const line = (a, off) => a.map((v, i) => isNum(v) ? `${X(i + off)},${Y(v)}` : '').filter(Boolean).join(' ');
+  const last = past.length - 1;
+  const area = `0,${H} ${line(past, 0)} ${X(last)},${H}`;
+  return `<svg class="trend" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
+    <polygon points="${area}" fill="var(--s-band)"/>
+    <line x1="${X(last)}" x2="${X(last)}" y1="0" y2="${H}" stroke="var(--line-strong)" vector-effect="non-scaling-stroke"/>
+    <polyline points="${line(past, 0)}" fill="none" stroke="var(--s-eg)" stroke-width="1.4" vector-effect="non-scaling-stroke"/>
+    <polyline points="${X(last)},${Y(past[last])} ${line(fut, past.length)}" fill="none" stroke="var(--s-eg)" stroke-width="1.4" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/></svg>`;
+}
+
 function renderStocks(view, arg) {
   if (arg && DATA.stocks[arg]) return renderStockDetail(view, arg);
 
   view.appendChild(el('header', { class: 'pagehead' }, `
-    <h1>Eight carriers, one scale.</h1>
+    <h1>Eight carriers, <span>one scale.</span></h1>
     <p>Every airline's two-month volatility forecast side by side. Sort any column; open a carrier for its full
     risk read and charts.</p>`));
 
@@ -375,6 +585,7 @@ function renderStocks(view, arg) {
   const cols = [
     { k: 't', label: 'Carrier', num: false },
     { k: 'avg', label: 'Forecast', title: 'Average of the three model forecasts' },
+    { k: 'trend', label: '6 months, then forecast', nosort: true, cls: 'tr', title: 'Realized volatility, then the average forecast, on one shared scale' },
     { k: 'range', label: 'Model range', sortKey: 'spread', title: 'Lowest to highest of the three forecasts' },
     { k: 'recent', label: 'Recent', title: '20-day realized volatility' },
     { k: 'change', label: 'Change', title: 'Forecast minus recent' },
@@ -395,6 +606,7 @@ function renderStocks(view, arg) {
   const rows = STATS.map(s => ({ ...s, spread: isNum(s.hi) ? s.hi - s.lo : null, flow: live && composite(s.t) ? flowLabel(composite(s.t).signal) : '' }));
   function drawHead() {
     thead.innerHTML = '<tr>' + cols.map(c => {
+      if (c.nosort) return `<th scope="col"${c.title ? ` title="${esc(c.title)}"` : ''} class="${c.cls || ''}">${c.label}</th>`;
       const sk = c.sortKey || c.k;
       const on = state.key === sk;
       const aria = on ? ` aria-sort="${state.dir < 0 ? 'descending' : 'ascending'}"` : '';
@@ -410,6 +622,7 @@ function renderStocks(view, arg) {
     tbody.innerHTML = sorted.map(s => `<tr data-t="${s.t}">
       <td class="co"><a href="#/stocks/${s.t}">${s.t}</a><span>${esc(s.short)}</span></td>
       <td class="lead-num">${pct(s.avg)}</td>
+      <td class="tr">${trendSvg(s.t)}</td>
       <td class="mini">${ladderTrack(s, false)}<span class="delta">${pct(s.lo, 0)}–${pct(s.hi, 0)}</span></td>
       <td>${pct(s.recent)}</td>
       <td>${signed(s.change)}<span class="delta"> pts</span></td>
@@ -425,12 +638,12 @@ function renderStocks(view, arg) {
     const nb = thead.querySelector(`button[data-k="${k}"]`); if (nb) nb.focus();
   });
   tbody.addEventListener('click', (e) => { if (e.target.closest('a')) return; const tr = e.target.closest('tr[data-t]'); if (tr) location.hash = '#/stocks/' + tr.dataset.t; });
-  bindTip(tbody, 'tr[data-t] td.mini', (n) => ladderTip(statOf(n.parentElement.dataset.t)));
+  bindTip(tbody, 'tr[data-t] td.mini, tr[data-t] td.tr', (n) => ladderTip(statOf(n.parentElement.dataset.t)));
   drawHead(); drawBody();
 
   view.appendChild(el('p', { class: 'note', style: 'margin-top:1rem' },
     `Forecasts are ${termLink('annualized volatility', 'Annualized volatility')} averaged over the next ~2 months, the mean of EGARCH, TimesFM and TimesFM with the sector. Hover a model range for each model's number. “Change” compares the forecast with the last 20 trading days.` +
-    (live ? ' Alt-data flow describes fuel, news and operations context, not a price call.' : ' Fuel, news and operations signals will appear here once the notebook exports live data.')));
+    (live ? ' Alt-data flow describes fuel, news and operations context, not a price call.' : ' Fuel, news and operations signals will appear here once they reach the daily data.')));
 }
 
 /* ---------- stock detail ---------- */
@@ -441,53 +654,53 @@ function renderStockDetail(view, sym) {
   const name = info.longName || info.shortName || AIRLINE_NAMES[sym] || sym;
   const price = info.currentPrice ?? info.regularMarketPrice;
   const reg = currentRegime();
-  setCrumbs([['Research', '#/overview'], ['Stocks', '#/stocks'], [sym, '#/stocks/' + sym]]);
   document.title = `${sym} — Sentinel`;
 
   // prev / next in forecast order
   const order = STATS.map(x => x.t);
   const i = order.indexOf(sym);
   const prev = order[(i - 1 + order.length) % order.length], next = order[(i + 1) % order.length];
-  view.appendChild(el('nav', { class: 'stocknav', 'aria-label': 'Other carriers' }, `
-    <a href="#/stocks">All carriers</a>
-    <a href="#/stocks/${prev}" rel="prev">${ICON_BACK} ${prev}</a><a href="#/stocks/${next}" rel="next">${next} ${ICON_ARROW}</a>
-    <span class="hint">Use <kbd>←</kbd> <kbd>→</kbd> to step through carriers</span>`));
   const onKey = (e) => {
-    if (e.target.closest('input, select, textarea') || e.metaKey || e.ctrlKey || e.altKey) return;
+    if ((e.target.closest && e.target.closest('input, select, textarea')) || e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.key === 'ArrowLeft') location.hash = '#/stocks/' + prev;
     if (e.key === 'ArrowRight') location.hash = '#/stocks/' + next;
   };
   document.addEventListener('keydown', onKey);
   routeCleanup.push(() => document.removeEventListener('keydown', onKey));
 
-  view.appendChild(el('header', { class: 'stockhead' }, `
-    <div class="id"><span class="tk">${sym}</span><h1>${esc(name)}</h1></div>
-    <div class="px"><div class="big">${money(price)}</div>
-      <p class="sub">${isNum(st.chg1y) ? `${signed(st.chg1y)}% over 12 months` : ''}${isNum(info.bid) ? ` · bid ${fmt(info.bid)} / ask ${fmt(info.ask)}` : ''}</p></div>`));
+  view.appendChild(el('header', { class: 'sx-head' }, `
+    <div><p class="tk">${sym}</p><h1>${esc(name)}</h1></div>
+    <div class="sx-px"><div class="big">${money(price)}</div>
+      <p>${isNum(st.chg1y) ? `${signed(st.chg1y)}% over 12 months` : ''}${isNum(info.bid) ? ` · bid ${fmt(info.bid)} / ask ${fmt(info.ask)}` : ''}</p></div>`));
 
-  // risk read
   const nar = buildNarrative(sym);
   const move = horizonMove(st.avg);
-  const dirWord = !isNum(st.change) ? '' : st.change > 1 ? 'up from' : st.change < -1 ? 'down from' : 'close to';
-  const rr = el('section', { class: 'feature riskread', 'aria-labelledby': 'rrTitle' });
-  rr.innerHTML = `
-    <div class="figure">
-      <p class="lbl">Forecast volatility, ${esc(DATA.horizon_label || 'next ~2 months')}</p>
-      <div class="num">${pct(st.avg, 0)}<small>annualized</small></div>
-      <p class="rng">Models range ${pct(st.lo, 0)} to ${pct(st.hi, 0)}</p>
-      <ul class="facts">
-        <li>${ICON_DOT}<span>${dirWord ? `${dirWord[0].toUpperCase() + dirWord.slice(1)} <b>${pct(st.recent)}</b> over the last 20 trading days` : ''}</span></li>
-        <li>${ICON_DOT}<span>A typical move over the period is about <b>±${pct(move, 0)}</b> of the share price</span></li>
-        <li>${ICON_DOT}<span><b>${ordinal(st.rank)}</b> most volatile of the ${STATS.length} carriers</span></li>
-        ${reg ? `<li>${ICON_DOT}<span>Market regime: <span class="regime-pill"><i style="background:${regimeColor(reg.name)}"></i>${esc(reg.name)} ${pct(reg.p * 100, 0)}</span></span></li>` : ''}
-      </ul>
+  const scaleTicks = []; for (let v = SCALE.lo; v <= SCALE.hi; v += 20) scaleTicks.push(`<span style="left:${xPct(v)}">${v}%</span>`);
+  const trk = DATA.track && DATA.track.tickers && DATA.track.tickers[sym] && DATA.track.tickers[sym].egarch;
+  const dayHit = trk && trk.all && trk.all.day;
+  const inst = el('section', { class: 'sx-inst', 'aria-label': 'Forecast summary' });
+  inst.innerHTML = `<div class="sx-top">
+      <div class="sx-num"><p class="l">Forecast volatility, ${esc(DATA.horizon_label || 'next ~2 months')}</p><div class="n">${pct(st.avg, 0)}<small>annualized</small></div></div>
+      <div class="sx-track" aria-hidden="true">${ladderTrack(st)}<div class="scale">${scaleTicks.join('')}</div>${ladderKey()}</div>
     </div>
-    <div class="words">
-      <h2 id="rrTitle">${esc(nar.title)}</h2>
-      ${nar.paras.map(p => `<p>${p}</p>`).join('')}
-      <p class="asof">Written automatically from model output · data as of ${esc(longDate((DATA.generated || '').split(' ')[0]))} · not financial advice</p>
+    <div class="sx-cells">
+      <div><p class="l">Typical move, ~2 months</p><p class="v">±${pct(move, 0)}</p></div>
+      <div><p class="l">Recent (20-day)</p><p class="v">${pct(st.recent, 0)}<small>${signed(st.change, 0)} pts to forecast</small></p></div>
+      <div><p class="l">Rank</p><p class="v">${ordinal(st.rank)}<small>of ${STATS.length}</small></p></div>
+      <div><p class="l">Shared with sector</p><p class="v">${pct(st.share, 0)}</p></div>
+      ${dayHit ? `<div><p class="l">Next-day check</p><p class="v">${pct(dayHit.hit * 100, 0)}<small>target 95%</small></p></div>` : (reg ? `<div><p class="l">Market regime</p><p class="v">${esc(reg.name)}</p></div>` : '')}
     </div>`;
-  view.appendChild(rr);
+  view.appendChild(inst);
+
+  const grid = el('div', { class: 'sx-grid' });
+  const mainCol = el('div', { class: 'sx-main' });
+  const rail = el('aside', { class: 'sx-rail', 'aria-label': 'Reading and other carriers' });
+  rail.innerHTML = `<div class="pane"><h2>${esc(nar.title)}</h2>${nar.paras.map(p => `<p>${p}</p>`).join('')}
+      <p class="asof">Written automatically from model output · not financial advice</p></div>
+    <div class="pane"><h3 style="margin:0">The eight</h3><ul class="sx-pick">${STATS.map(x => `<li><a href="#/stocks/${x.t}"${x.t === sym ? ' aria-current="page"' : ''}><b>${x.t}</b>${ladderTrack(x, false)}<span class="v">${pct(x.avg, 0)}</span></a></li>`).join('')}</ul>
+      <p class="asof" style="margin-top:.6rem">Use ← → to step through carriers</p></div>`;
+  grid.appendChild(mainCol); grid.appendChild(rail);
+  view.appendChild(grid);
 
   // volatility chart (realized + 3 forecasts + range band)
   const vc = el('section', { class: 'card chartcard', 'aria-labelledby': 'vcTitle' });
@@ -507,10 +720,10 @@ function renderStockDetail(view, sym) {
     const why = { 'egarch-t': 'a Student-t EGARCH (heavier tails)', 'egarch-3y': 'EGARCH fitted on the last 3 years', 'egarch-t-3y': 'a Student-t EGARCH on the last 3 years', realized: 'recent realized volatility, held flat, because every EGARCH fit failed' }[variant] || variant;
     vc.appendChild(el('p', { class: 'note', style: 'margin:.7rem 0 0' }, `Today the standard EGARCH fit was unstable on ${sym}'s price history, so the EGARCH line uses ${esc(why)}.`));
   }
-  view.appendChild(vc);
+  mainCol.appendChild(vc);
 
   // how good have these forecasts been?
-  renderTrackRecord(view, sym);
+  renderTrackRecord(mainCol, sym);
 
   // price chart with regime shading + big moves
   const moves = bigMoves(s.price, 6);
@@ -528,14 +741,7 @@ function renderStockDetail(view, sym) {
       ${REGIMES.map(k => `<span><i class="sw box" style="background:${regimeColor(k)};opacity:.35"></i> ${k}</span>`).join('')}
     </div>
     <p class="note" style="margin:.7rem 0 0">Sentinel doesn't link news stories to these moves yet; the dates are a starting point for your own reading.</p>`;
-  view.appendChild(pc);
-
-  // where it sits among the eight
-  const among = el('section', { class: 'card chartcard', 'aria-labelledby': 'amTitle' });
-  among.innerHTML = `<div class="cc-head"><div><h3 id="amTitle">Where ${sym} sits among the eight</h3>
-    <p>Same scale as the overview; ${sym} is outlined.</p></div>${ladderKey()}</div>`;
-  among.appendChild(buildLadder(sym));
-  view.appendChild(among);
+  mainCol.appendChild(pc);
 
   // alternative data: live only
   const c = composite(sym);
@@ -548,11 +754,11 @@ function renderStockDetail(view, sym) {
         <div><div class="k">News</div><div class="v">${zWord(c.news_z, 'positive', 'negative')}</div><div class="d">${fmtInt(c.news_n)} headlines, ${pct((c.news_neg_share || 0) * 100, 0)} negative</div></div>
         <div><div class="k">Operations</div><div class="v">${zWord(c.operations_z, 'cleaner than peers', 'more disrupted')}</div><div class="d">Delay rank ${fmtInt(c.delay_rank)} of 8</div></div>
       </div>`;
-    view.appendChild(alt);
+    mainCol.appendChild(alt);
   } else {
-    view.appendChild(el('section', { class: 'notlive chartcard' }, `<h3>Fuel, news and operations <span class="tag soon">Not live yet</span></h3>
-      <p>These signals are collected by the pipeline but weren't in this data export, so Sentinel hides them rather than
-      show old example values. They'll appear here after the notebook exports a live composite file.</p>`));
+    mainCol.appendChild(el('section', { class: 'notlive chartcard' }, `<h3>Fuel, news and operations <span class="tag soon">Not live yet</span></h3>
+      <p>These signals are collected by the pipeline but aren't in the daily data yet, so Sentinel hides them rather than
+      show old example values. They'll appear here once they're included.</p>`));
   }
 
   // valuation facts (collapsed: context, not the product's answer)
@@ -570,8 +776,8 @@ function renderStockDetail(view, sym) {
       ['52-week low', money(info.fiftyTwoWeekLow)],
       ['Average volume', fmtInt(info.averageVolume)],
     ].map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>
-    <p class="factnote note">From Yahoo Finance at export time. PEG uses analysts' growth estimates, which swing widely for airlines; read it with care.</p>`;
-  view.appendChild(facts);
+    <p class="factnote note">From Yahoo Finance at the latest daily run. PEG uses analysts' growth estimates, which swing widely for airlines; read it with care.</p>`;
+  mainCol.appendChild(facts);
 
   drawStockCharts(sym, moves);
   $('#roVol').innerHTML = volReadoutDefault(st);
@@ -625,6 +831,7 @@ function renderTrackRecord(view, sym) {
   view.appendChild(sec);
 
   const draw = () => {
+    if (!$('#trGrid')) return;
     const e = T[TRACK_MODEL];
     $('#trGrid').innerHTML = trackCards(e, start);
     $('#trLatest').innerHTML = trackLatest(e.series);
@@ -636,7 +843,7 @@ function renderTrackRecord(view, sym) {
     if (m) { TRACK_MODEL = m.dataset.m; $$('button[data-m]', sec).forEach(b => b.setAttribute('aria-pressed', b === m)); draw(); }
     if (h) { TRACK_HORIZON = h.dataset.h; $$('button[data-h]', sec).forEach(b => b.setAttribute('aria-pressed', b === h)); draw(); }
   });
-  requestAnimationFrame(draw);
+  draw();
 }
 
 function trackCards(e, start) {
@@ -680,7 +887,7 @@ const trackStartPlugin = {
     const px = x.getPixelForValue(opts.index);
     ctx.save(); ctx.strokeStyle = css('--ink-3'); ctx.setLineDash([3, 3]); ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(px, a.top); ctx.lineTo(px, a.bottom); ctx.stroke(); ctx.setLineDash([]);
-    ctx.fillStyle = css('--ink-2'); ctx.font = "600 11px 'Public Sans', sans-serif";
+    ctx.fillStyle = css('--ink-2'); ctx.font = "600 11px 'DM Mono', sans-serif";
     ctx.textAlign = 'right'; ctx.fillText('Reconstructed', px - 6, a.top + 12);
     if (a.right - px > 34) { ctx.textAlign = 'left'; ctx.fillText('Live', px + 6, a.top + 12); }
     ctx.restore();
@@ -780,7 +987,7 @@ function bigMoves(P, n) {
    CHARTS
    ============================================================ */
 function chartTheme() {
-  Chart.defaults.font.family = "'Public Sans', -apple-system, sans-serif";
+  Chart.defaults.font.family = "'DM Mono', -apple-system, sans-serif";
   Chart.defaults.font.size = 12;
   Chart.defaults.color = css('--ink-3');
   Chart.defaults.borderColor = css('--line');
@@ -791,7 +998,7 @@ function chartTheme() {
 function tooltipStyle(extra = {}) {
   return {
     enabled: true, mode: 'index', intersect: false,
-    backgroundColor: css('--ink'), titleColor: css('--bg'), bodyColor: css('--bg'), footerColor: css('--bg'),
+    backgroundColor: css('--tip-bg'), titleColor: css('--tip-ink'), bodyColor: css('--tip-ink'), footerColor: css('--tip-ink'),
     padding: 10, cornerRadius: 6, boxPadding: 4, usePointStyle: true,
     titleFont: { weight: '600' }, footerFont: { weight: '400', size: 11 },
     filter: (item) => !item.dataset.tipHide && item.raw != null,
@@ -844,7 +1051,7 @@ const todayLinePlugin = {
     ctx.strokeStyle = css('--ink-3'); ctx.setLineDash([3, 3]); ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(px, a.top); ctx.lineTo(px, a.bottom); ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle = css('--ink-2'); ctx.font = "600 11px 'Public Sans', sans-serif";
+    ctx.fillStyle = css('--ink-2'); ctx.font = "600 11px 'DM Mono', sans-serif";
     ctx.textAlign = 'left'; ctx.fillText('Forecast', px + 6, a.top + 12);
     ctx.textAlign = 'right'; ctx.fillText('History', px - 6, a.top + 12);
     ctx.restore();
@@ -860,7 +1067,7 @@ const moveLabelsPlugin = {
       const meta = chart.getDatasetMeta(di);
       if (meta.hidden) return;
       ctx.save();
-      ctx.font = "600 11px 'Public Sans', sans-serif"; ctx.textAlign = 'center';
+      ctx.font = "600 11px 'DM Mono', sans-serif"; ctx.textAlign = 'center';
       meta.data.forEach((pt, i) => {
         const lab = ds.moveLabels[i]; if (!lab) return;
         const up = lab.r >= 0;
@@ -886,7 +1093,7 @@ const regimeOnsetPlugin = {
       ctx.beginPath(); ctx.moveTo(px, a.top); ctx.lineTo(px, a.bottom); ctx.stroke();
       if (!opts.compact && px - lastLabel > 70) {
         lastLabel = px;
-        ctx.globalAlpha = 1; ctx.font = "600 11px 'Public Sans', sans-serif"; ctx.textAlign = 'left';
+        ctx.globalAlpha = 1; ctx.font = "600 11px 'DM Mono', sans-serif"; ctx.textAlign = 'left';
         const tx = Math.min(px + 4, a.right - 56);
         ctx.lineWidth = 3; ctx.strokeStyle = css('--card'); ctx.strokeText(o.k, tx, a.top + 12);
         ctx.fillStyle = opts.ink || css('--ink'); ctx.fillText(o.k, tx, a.top + 12);
@@ -936,7 +1143,7 @@ const crosshairPlugin = {
       ctx.setLineDash([4, 4]); ctx.strokeStyle = css('--ink-3');
       ctx.beginPath(); ctx.moveTo(a.left, c.y); ctx.lineTo(a.right, c.y); ctx.stroke(); ctx.setLineDash([]);
       const label = opts.fmt(y.getValueForPixel(c.y));
-      ctx.font = "600 11px 'Public Sans', sans-serif";
+      ctx.font = "600 11px 'DM Mono', sans-serif";
       const w = ctx.measureText(label).width + 12, h = 20;
       const lx = a.right - w, ly = Math.max(a.top, Math.min(a.bottom - h, c.y - h / 2));
       ctx.fillStyle = css('--ink'); ctx.beginPath(); ctx.roundRect(lx, ly, w, h, 4); ctx.fill();
@@ -975,7 +1182,7 @@ function drawStockCharts(sym, moves) {
           { label: 'Range low', data: fut(loP), borderWidth: 0, pointRadius: 0, fill: false, tipHide: true },
           { label: 'Realized', data: rvv.concat(new Array(fd.length).fill(null)), borderColor: css('--s-real'), borderWidth: 1.8, pointRadius: 0, pointHoverRadius: 4, tension: .2 },
           { label: 'EGARCH', data: fut(s.egarch_path), borderColor: css('--s-eg'), borderDash: [6, 4], borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, tension: .2 },
-          { label: 'TimesFM', data: fut(s.timesfm_alone_path), borderColor: css('--s-tf'), borderDash: [6, 4], borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, tension: .2 },
+          { label: 'TimesFM', data: fut(s.timesfm_alone_path), borderColor: css('--s-tf'), borderDash: [3, 3], borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, tension: .2 },
           { label: 'TimesFM + sector', data: fut(s.timesfm_together_path), borderColor: css('--s-tf2'), borderDash: [2, 3], borderWidth: 2.2, pointRadius: 0, pointHoverRadius: 4, tension: .2 },
         ],
       },
@@ -1046,7 +1253,7 @@ function drawStockCharts(sym, moves) {
         layout: { padding: { top: 14 } },
         plugins: {
           legend: { display: false },
-          regimeBands: { labels: P.dates, alpha: 0.13 },
+          regimeBands: { labels: P.dates, alpha: 0.06 },
           tooltip: { enabled: false },
         },
         scales: { x: dateAxis(P.dates), y: valueAxis(v => '$' + v) },
@@ -1079,7 +1286,7 @@ function priceReadoutDefault(P, info) {
   const n = P.close.length - 1;
   return `<b>Latest · ${longDate(P.dates[n])}</b>
     <span>Close <b>${money(P.close[n])}</b></span>
-    ${isNum(info.bid) ? `<span>Bid <b>${money(info.bid)}</b> · Ask <b>${money(info.ask)}</b></span><span class="muted">bid/ask as of the data export</span>` : ''}
+    ${isNum(info.bid) ? `<span>Bid <b>${money(info.bid)}</b> · Ask <b>${money(info.ask)}</b></span><span class="muted">bid/ask as of the latest daily run</span>` : ''}
     <span class="muted">Move across the chart for any day</span>`;
 }
 function volReadoutDefault(st) {
@@ -1103,7 +1310,7 @@ function drawRegimeChart(id, { compact = false } = {}) {
       runStart = i;
     }
   }
-  const ds = (k, i) => ({ label: k, data: r[k].map(v => isNum(v) ? v * 100 : null), borderColor: regimeColor(k), backgroundColor: regimeColor(k) + (compact ? '4d' : '33'), fill: i === 0 ? 'origin' : '-1', borderWidth: compact ? 1.2 : 1.5, pointRadius: 0, pointHoverRadius: 0, stack: 'r', tension: .25 });
+  const ds = (k, i) => ({ label: k, data: r[k].map(v => isNum(v) ? v * 100 : null), borderColor: regimeColor(k), backgroundColor: regimeColor(k) + (k === 'Stressed' ? '14' : k === 'Calm' ? '38' : '55'), fill: i === 0 ? 'origin' : '-1', borderWidth: compact ? 1.2 : 1.5, pointRadius: 0, pointHoverRadius: 0, stack: 'r', tension: .25 });
   activeCharts.push(new Chart(cv, {
     type: 'line',
     data: { labels, datasets: REGIMES.map(ds) },
@@ -1136,7 +1343,7 @@ function renderPortfolio(view) {
   const reg = currentRegime();
 
   view.appendChild(el('header', { class: 'pagehead' }, `
-    <h1>How the eight move together.</h1>
+    <h1>How the eight <span>move together.</span></h1>
     <p>The market regime, how much of each airline's risk is shared with the sector, and what that means for a
     portfolio holding all eight.</p>`));
 
@@ -1236,7 +1443,7 @@ function drawPcaChart() {
   const labels = pf.pca_explained.map((_, i) => i === 0 ? 'PC1 · sector' : 'PC' + (i + 1));
   activeCharts.push(new Chart(cv, {
     type: 'bar',
-    data: { labels, datasets: [{ data: pf.pca_explained.map(v => v * 100), backgroundColor: pf.pca_explained.map((_, i) => i === 0 ? css('--s-tf') : css('--s-vol')), borderRadius: 4, borderWidth: 0 }] },
+    data: { labels, datasets: [{ data: pf.pca_explained.map(v => v * 100), backgroundColor: pf.pca_explained.map((_, i) => i === 0 ? css('--s-tf2') : css('--s-vol')), borderRadius: 4, borderWidth: 0 }] },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false }, tooltip: tooltipStyle({ mode: 'nearest', intersect: true, callbacks: { label: c => ` ${c.parsed.y.toFixed(1)}% of all movement` } }) },
@@ -1253,7 +1460,7 @@ function drawHeatmap() {
   const ranked = vals.slice().sort((x, y) => y.v - x.v);
   const c0 = hexRgb(css('--ramp-0')), c1 = hexRgb(css('--ramp-1'));
   const colorOf = (v) => { const f = Math.max(0, Math.min(1, (v - lo) / (hi - lo || 1))); return mix(c0, c1, f); };
-  const inkOn = (v) => { const f = (v - lo) / (hi - lo || 1); const dark = document.documentElement.dataset.theme === 'dark'; return (dark ? f < .55 : f > .5) ? '#f4f5f2' : '#17262b'; };
+  const inkOn = (v) => { const f = (v - lo) / (hi - lo || 1); const dark = document.documentElement.dataset.theme === 'dark'; return (dark ? f < .55 : f > .5) ? '#eceef0' : '#0b0e12'; };
   const words = (v) => v >= .85 ? 'move together very closely' : v >= .7 ? 'move together closely' : v >= .5 ? 'move together moderately' : 'move together loosely';
   let html = `<table class="heat"><caption style="position:absolute;left:-9999px">Return correlation matrix</caption><thead><tr><td></td>${t.map(x => `<th scope="col">${x}</th>`).join('')}</tr></thead><tbody>`;
   t.forEach((a, i) => {
@@ -1297,7 +1504,7 @@ function mix(a, b, f) { const c = a.map((x, k) => Math.round(x + (b[k] - x) * f)
    ============================================================ */
 function renderLab(view) {
   view.appendChild(el('header', { class: 'pagehead' }, `
-    <h1>Forecasting methods, from regression to transformers.</h1>
+    <h1>Forecasting methods, <span>from regression to transformers.</span></h1>
     <p>The four models running in Sentinel today, then the wider set we document for study. Interactive versions
     of the study models are not built yet.</p>`));
 
@@ -1396,7 +1603,7 @@ function termLink(label, term) {
 
 function renderGlossary(view, arg) {
   view.appendChild(el('header', { class: 'pagehead' }, `
-    <h1>Plain-English definitions.</h1>
+    <h1>Plain-English <span>definitions.</span></h1>
     <p>Every model, metric and term used across Sentinel, defined for a general reader. Dotted-underlined words
     elsewhere on the site link here.</p>`));
   const bar = el('div', { class: 'glossbar' });
@@ -1445,7 +1652,6 @@ function drawSidebar() {
   }
   const d = dataDate();
   $('#asofChip').innerHTML = `<i aria-hidden="true"></i>Data as of ${esc(longDate(d))}`;
-  $('#sideMeta').textContent = `Models re-run daily; prices through ${longDate(d)}.`;
   $('#navCount').textContent = DATA.tickers.length;
 }
 
@@ -1454,19 +1660,6 @@ async function boot() {
   $('#footYear').textContent = new Date().getFullYear();
   $('#themeSwitch').setAttribute('aria-checked', document.documentElement.dataset.theme === 'dark' ? 'true' : 'false');
   $('#themeSwitch').addEventListener('click', () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark', true));
-  // collapsible sidebar (desktop); the choice is remembered
-  const syncSide = () => {
-    const off = document.documentElement.dataset.side === 'collapsed';
-    const t = $('#sideToggle'); t.setAttribute('aria-pressed', String(off));
-    t.setAttribute('aria-label', off ? 'Show sidebar' : 'Hide sidebar'); t.title = off ? 'Show sidebar' : 'Hide sidebar';
-  };
-  $('#sideToggle').addEventListener('click', () => {
-    const off = document.documentElement.dataset.side !== 'collapsed';
-    if (off) document.documentElement.dataset.side = 'collapsed'; else delete document.documentElement.dataset.side;
-    try { localStorage.setItem('sentinel-side', off ? 'collapsed' : 'open'); } catch (e) {}
-    syncSide();
-  });
-  syncSide();
   $('#menuToggle').addEventListener('click', () => {
     const open = !$('#sideNav').classList.contains('open');
     $('#sideNav').classList.toggle('open', open);

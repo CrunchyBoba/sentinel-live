@@ -162,7 +162,7 @@ async function loadGlobeData() {
 /* ============================================================ */
 function renderGlobe(view) {
   view.appendChild(el('header', { class: 'pagehead' }, `
-    <h1>Where each airline's risk lands.</h1>
+    <h1>Where each airline's <span>risk lands.</span></h1>
     <p>A live picture of the airline sector: each carrier's flights in the air, its hubs and airports, delays and
     weather at those airports, and natural hazards nearby. Hubs and flights are coloured by the carrier's two-month
     volatility forecast.</p>`));
