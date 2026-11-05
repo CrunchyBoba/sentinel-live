@@ -4,8 +4,9 @@ Sentinel is a static research site (GitHub Pages, repo `CrunchyBoba/sentinel-liv
 two-month volatility for eight U.S. airline stocks (DAL, AAL, UAL, LUV, ALK, JBLU, ULCC, ALGT), shows the
 sector on a 3D globe, and publicly scores its own forecasts. A GitHub Action re-runs everything daily.
 
-Read before changing anything: `README.md` (how it all works), `PRODUCT.md` (what the product must and
-must not do), `DESIGN.md` (the visual system; it is authoritative for look and wording).
+Read before changing anything: `HANDOFF.md` (project history, decisions and open items), `README.md`
+(how it all works), `PRODUCT.md` (what the product must and must not do), `DESIGN.md` (the visual system;
+it is authoritative for look and wording).
 
 ## Pushing to `main` is publishing
 - GitHub Pages serves `main` at the repo root. Every push to `main` is live within about a minute.
